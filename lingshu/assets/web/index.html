@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>linghsu body</title>
+<style>
+  html,body{margin:0;height:100%;overflow:hidden;background:transparent}
+  #stage{position:fixed;inset:0;background:linear-gradient(180deg,#22303F 0%,#101720 70%,#0C111A 100%)}
+  model-viewer{
+    position:fixed;inset:0;width:100%;height:100%;
+    --progress-bar-color:rgba(212,175,110,.55);
+    --progress-mask:transparent;
+  }
+  /* 穴位可见标注已烘焙进模型（金色圆片）；
+     DOM 热点仅作透明点击区，选中时显示呼吸环与名牌 */
+  .hotspot{
+    appearance:none;border:none;padding:0;
+    background:transparent;border-radius:50%;
+    width:30px;height:30px;
+    transform:translate(-50%,-50%);
+    pointer-events:auto;cursor:pointer;
+    transition:opacity .25s;
+  }
+  /* 模型加载完成前隐藏全部热点（失败时不出现误导性点阵） */
+  body:not(.loaded) .hotspot{display:none!important}
+  #loaderr{position:fixed;inset:0;display:none;align-items:center;justify-content:center;
+    color:rgba(233,206,147,.85);font:500 14px/1.6 serif;letter-spacing:2px;text-align:center}
+  .hotspot.dim{opacity:.0;pointer-events:none}
+  .hotspot.sel{width:44px;height:44px}
+  .hotspot.sel::before{
+    content:'';position:absolute;inset:0;border-radius:50%;
+    border:1.6px solid rgba(236,209,148,.95);
+    box-shadow:0 0 16px rgba(236,209,148,.85);
+    animation:pulse 1.6s ease-in-out infinite;
+  }
+  @keyframes pulse{50%{transform:translate(-50%,-50%) scale(1.22)}}
+  .hotspot .tag{
+    position:absolute;top:-22px;left:50%;transform:translateX(-50%);
+    font:600 12px/1.5 serif;color:#F2E6C9;letter-spacing:2px;
+    background:rgba(13,19,28,.78);padding:1px 7px;border-radius:5px;
+    border:1px solid rgba(212,175,110,.45);white-space:nowrap;
+    opacity:0;transition:opacity .2s;pointer-events:none;
+  }
+  .hotspot.sel .tag{opacity:1}
+  #hint{position:fixed;right:12px;bottom:8px;color:rgba(255,255,255,.34);font-size:10.5px;letter-spacing:1px;pointer-events:none}
+</style>
+<script type="module" src="./model-viewer.min.js"></script>
+</head>
+<body>
+<div id="stage"></div>
+<model-viewer id="mv"
+  camera-controls
+  touch-action="pan-y"
+  interaction-prompt="none"
+  tone-mapping="neutral"
+  exposure="1.15"
+  environment-image="neutral"
+  shadow-intensity="1.1"
+  shadow-softness="0.8"
+  camera-orbit="180deg 80deg 2.55m"
+  min-field-of-view="8deg"
+  max-field-of-view="40deg"
+  min-camera-orbit="auto auto 0.7m"
+  max-camera-orbit="auto auto 3m">
+</model-viewer>
+<div id="hint">单指旋转 · 双指缩放 · 点击穴位</div>
+<div id="loaderr">经穴铜人加载中…<br>若长时间无响应请重启应用</div>
+<script>
+  setTimeout(function(){
+    if (!document.body.classList.contains('loaded'))
+      document.getElementById('loaderr').style.display = 'flex';
+  }, 9000);
+</script>
+<script>
+(function(){
+  const mv = document.getElementById('mv');
+  let pts = [], filter = 'COMMON', selected = null;
+
+  function post(o){ LingshuBridge.postMessage(JSON.stringify(o)); }
+
+  function classify(p){
+    // 返回 'show' | 'dim' | 'hide'
+    if (filter === 'ALL') return 'show';
+    if (filter === 'COMMON') return p.k ? 'show' : 'hide';
+    if (p.m === filter) return 'show';
+    return 'dim';
+  }
+
+  function applyFilter(){
+    for (const el of document.querySelectorAll('.hotspot')){
+      const p = pts.find(x => x.c === el.dataset.code);
+      if (!p) continue;
+      const st = classify(p);
+      el.classList.toggle('dim', st === 'dim');
+      el.style.display = st === 'hide' ? 'none' : '';
+    }
+  }
+
+  window.initScene = function(cfg){
+    pts = cfg.points;
+    filter = cfg.filter || 'COMMON';
+    // 清旧点
+    for (const el of document.querySelectorAll('.hotspot')) el.remove();
+    const frag = document.createDocumentFragment();
+    for (const p of pts){
+      const b = document.createElement('button');
+      b.className = 'hotspot';
+      b.slot = 'hotspot-' + p.c;
+      b.dataset.code = p.c;
+      b.dataset.position = p.p.join(' ');
+      b.dataset.normal = p.n.join(' ');
+      const tag = document.createElement('span');
+      tag.className = 'tag'; tag.textContent = p.nm;
+      b.appendChild(tag);
+      b.addEventListener('click', function(ev){
+        ev.stopPropagation();
+        post({t:'tap', code:p.c});
+      });
+      frag.appendChild(b);
+    }
+    mv.appendChild(frag);
+    if (cfg.src) mv.src = cfg.src;
+    if (cfg.camera) mv.cameraOrbit = cfg.camera;
+    applyFilter();
+  };
+
+  window.setFilter = function(f){ filter = f; applyFilter(); };
+
+  window.selectPoint = function(code){
+    selected = code;
+    for (const el of document.querySelectorAll('.hotspot')){
+      el.classList.toggle('sel', el.dataset.code === code);
+    }
+  };
+
+  window.orbitTo = function(posStr){
+    // 面向穴位：yaw 由 x/z 计算（模型面朝 -Z，相机需绕到对侧 +180°）
+    try{
+      const [x,,z] = posStr.split(' ').map(Number);
+      const yaw = Math.atan2(x, z) * 180 / Math.PI + 180;
+      mv.cameraOrbit = yaw.toFixed(1) + 'deg 80deg 1.15m';
+    }catch(e){}
+  };
+
+  mv.addEventListener('load', function(){
+    document.body.classList.add('loaded');
+    document.getElementById('loaderr').style.display = 'none';
+    post({t:'loaded'});
+    applyFilter();
+  });
+  mv.addEventListener('error', function(e){
+    post({t:'error', msg: String((e.detail && e.detail.message) || e.detail || 'unknown')});
+  });
+})();
+</script>
+</body>
+</html>

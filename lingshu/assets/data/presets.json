@@ -1,0 +1,12 @@
+{
+  "presets": [
+    {"code": "blood_pressure", "name": "血压", "unit": "mmHg", "dualValue": true, "lowName": "收缩压(高压)", "highName": "舒张压(低压)", "refLow": 60, "refHigh": 89, "refLow2": 90, "refHigh2": 139, "desc": "正常 <120/80 mmHg；≥140/90 提示偏高，请咨询医生", "icon": "bp"},
+    {"code": "blood_sugar", "name": "血糖", "unit": "mmol/L", "dualValue": false, "refLow": 3.9, "refHigh": 6.1, "desc": "空腹血糖正常 3.9-6.1 mmol/L（餐后2小时 <7.8）", "icon": "sugar"},
+    {"code": "heart_rate", "name": "心率", "unit": "次/分", "dualValue": false, "refLow": 60, "refHigh": 100, "desc": "静息心率正常 60-100 次/分", "icon": "heart"},
+    {"code": "weight", "name": "体重", "unit": "kg", "dualValue": false, "refLow": null, "refHigh": null, "desc": "BMI = 体重(kg) ÷ 身高(m)²，正常范围 18.5-23.9", "icon": "weight"},
+    {"code": "height", "name": "身高", "unit": "cm", "dualValue": false, "refLow": null, "refHigh": null, "desc": "建议每月固定时间测量", "icon": "height"},
+    {"code": "temperature", "name": "体温", "unit": "℃", "dualValue": false, "refLow": 36.0, "refHigh": 37.2, "desc": "腋温正常 36.0-37.2℃，≥37.3℃ 为发热", "icon": "temp"},
+    {"code": "spo2", "name": "血氧饱和度", "unit": "%", "dualValue": false, "refLow": 95, "refHigh": 100, "desc": "正常 ≥95%，持续低于 93% 请及时就医", "icon": "spo2"},
+    {"code": "bmi", "name": "BMI", "unit": "kg/m²", "dualValue": false, "refLow": 18.5, "refHigh": 23.9, "desc": "由身高体重自动计算", "icon": "bmi", "derived": true}
+  ]
+}

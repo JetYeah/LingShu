@@ -1,0 +1,22 @@
+# ---- 本工作区专属：辅助/调试目录（含 FlowUS token 等凭证，严禁入库） ----
+.setup/
+.zcode/
+
+# ---- 构建产物与缓存 ----
+build/
+android/.gradle/
+.gradle/
+dart_tool/
+
+# ---- 大体积二进制产物（发布物走 GitHub Releases） ----
+*.apk
+*.aab
+dist/
+
+# ---- 设备调试拉取的数据（含 PIN 哈希） ----
+prefs.xml
+
+# ---- 系统杂项 ----
+Thumbs.db
+desktop.ini
+$RECYCLE.BIN/

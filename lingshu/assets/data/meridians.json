@@ -1,0 +1,169 @@
+{
+  "meridians": [
+    {
+      "code": "LU",
+      "name": "手太阴肺经",
+      "pinyin": "shǒu tài yīn fèi jīng",
+      "category": "十二正经",
+      "element": "金",
+      "color": "#9AA7B4",
+      "pairedWith": "LI",
+      "flowSummary": "起于中焦，向下联络大肠，回绕胃口，穿膈属肺，沿上肢内侧前缘至拇指桡侧端。",
+      "shichen": { "branch": "寅", "hours": "03:00-05:00", "tip": "寅时肺经当令，宜深睡养肺气。" }
+    },
+    {
+      "code": "LI",
+      "name": "手阳明大肠经",
+      "pinyin": "shǒu yáng míng dà cháng jīng",
+      "category": "十二正经",
+      "element": "金",
+      "color": "#9AA7B4",
+      "pairedWith": "LU",
+      "flowSummary": "起于食指桡侧端，沿上肢外侧前缘上行，经肩颈入下齿，左右交会于人中旁至对侧鼻翼。",
+      "shichen": { "branch": "卯", "hours": "05:00-07:00", "tip": "卯时大肠经当令，宜起床排便、饮温水。" }
+    },
+    {
+      "code": "ST",
+      "name": "足阳明胃经",
+      "pinyin": "zú yáng míng wèi jīng",
+      "category": "十二正经",
+      "element": "土",
+      "color": "#C8961E",
+      "pairedWith": "SP",
+      "flowSummary": "起于鼻翼旁，上行面部环绕口唇，下行经胸腹第二侧线，沿下肢外侧前缘至第二趾外侧端。",
+      "shichen": { "branch": "辰", "hours": "07:00-09:00", "tip": "辰时胃经当令，宜吃好早餐。" }
+    },
+    {
+      "code": "SP",
+      "name": "足太阴脾经",
+      "pinyin": "zú tài yīn pí jīng",
+      "category": "十二正经",
+      "element": "土",
+      "color": "#C8961E",
+      "pairedWith": "ST",
+      "flowSummary": "起于足大趾内侧端，沿下肢内侧前缘上行，入腹属脾络胃，上膈注心中。",
+      "shichen": { "branch": "巳", "hours": "09:00-11:00", "tip": "巳时脾经当令，宜适度活动助运化。" }
+    },
+    {
+      "code": "HT",
+      "name": "手少阴心经",
+      "pinyin": "shǒu shǎo yīn xīn jīng",
+      "category": "十二正经",
+      "element": "火",
+      "color": "#B03A2E",
+      "pairedWith": "SI",
+      "flowSummary": "起于心中，出属心系，下络小肠，其支脉沿上肢内侧后缘至小指桡侧端。",
+      "shichen": { "branch": "午", "hours": "11:00-13:00", "tip": "午时心经当令，宜小憩养心。" }
+    },
+    {
+      "code": "SI",
+      "name": "手太阳小肠经",
+      "pinyin": "shǒu tài yáng xiǎo cháng jīng",
+      "category": "十二正经",
+      "element": "火",
+      "color": "#B03A2E",
+      "pairedWith": "HT",
+      "flowSummary": "起于小指尺侧端，沿上肢外侧后缘上行，绕肩胛，上颈颊，抵目内眦与耳前。",
+      "shichen": { "branch": "未", "hours": "13:00-15:00", "tip": "未时小肠经当令，午餐宜在十三点前完成。" }
+    },
+    {
+      "code": "BL",
+      "name": "足太阳膀胱经",
+      "pinyin": "zú tài yáng páng guāng jīng",
+      "category": "十二正经",
+      "element": "水",
+      "color": "#2E4A62",
+      "pairedWith": "KI",
+      "flowSummary": "起于目内眦，上额交巅，下项夹脊抵腰，络肾属膀胱，分支沿下肢外侧后缘至足小趾外侧端。",
+      "shichen": { "branch": "申", "hours": "15:00-17:00", "tip": "申时膀胱经当令，宜多饮水、勤排尿。" }
+    },
+    {
+      "code": "KI",
+      "name": "足少阴肾经",
+      "pinyin": "zú shǎo yīn shèn jīng",
+      "category": "十二正经",
+      "element": "水",
+      "color": "#2E4A62",
+      "pairedWith": "BL",
+      "flowSummary": "起于足小趾下，斜行足心，沿下肢内侧后缘上行，贯脊属肾络膀胱，上贯肝膈入肺。",
+      "shichen": { "branch": "酉", "hours": "17:00-19:00", "tip": "酉时肾经当令，宜晚餐清淡、收藏肾气。" }
+    },
+    {
+      "code": "PC",
+      "name": "手厥阴心包经",
+      "pinyin": "shǒu jué yīn xīn bāo jīng",
+      "category": "十二正经",
+      "element": "相火",
+      "color": "#8E3B62",
+      "pairedWith": "TE",
+      "flowSummary": "起于胸中，出属心包络，下膈历络三焦，支脉沿上肢内侧中线至中指端。",
+      "shichen": { "branch": "戌", "hours": "19:00-21:00", "tip": "戌时心包经当令，宜静心放松、睡前揉内关。" }
+    },
+    {
+      "code": "TE",
+      "name": "手少阳三焦经",
+      "pinyin": "shǒu shǎo yáng sān jiāo jīng",
+      "category": "十二正经",
+      "element": "相火",
+      "color": "#8E3B62",
+      "pairedWith": "PC",
+      "flowSummary": "起于无名指尺侧端，沿上肢外侧中线上行，经肩上颈，绕耳后至眉梢。",
+      "shichen": { "branch": "亥", "hours": "21:00-23:00", "tip": "亥时三焦经当令，宜安睡以养百脉。" }
+    },
+    {
+      "code": "GB",
+      "name": "足少阳胆经",
+      "pinyin": "zú shǎo yáng dǎn jīng",
+      "category": "十二正经",
+      "element": "木",
+      "color": "#2E7D5B",
+      "pairedWith": "LR",
+      "flowSummary": "起于目外眦，上行头角，下耳后，沿颈肩、胁肋，下行下肢外侧中线至第四趾外侧端。",
+      "shichen": { "branch": "子", "hours": "23:00-01:00", "tip": "子时胆经当令，务必深睡以利胆气生发。" }
+    },
+    {
+      "code": "LR",
+      "name": "足厥阴肝经",
+      "pinyin": "zú jué yīn gān jīng",
+      "category": "十二正经",
+      "element": "木",
+      "color": "#2E7D5B",
+      "pairedWith": "GB",
+      "flowSummary": "起于足大趾外侧端，沿下肢内侧中线上行，绕阴器抵胁，属肝络胆，上贯膈注肺。",
+      "shichen": { "branch": "丑", "hours": "01:00-03:00", "tip": "丑时肝经当令，熟睡以养肝血。" }
+    },
+    {
+      "code": "RN",
+      "name": "任脉",
+      "pinyin": "rèn mài",
+      "category": "奇经八脉",
+      "element": null,
+      "color": "#7A5C3E",
+      "pairedWith": null,
+      "flowSummary": "起于胞中，出会阴，沿腹前正中线上行，经咽喉至下唇承浆。为阴脉之海。",
+      "shichen": null
+    },
+    {
+      "code": "DU",
+      "name": "督脉",
+      "pinyin": "dū mài",
+      "category": "奇经八脉",
+      "element": null,
+      "color": "#7A5C3E",
+      "pairedWith": null,
+      "flowSummary": "起于胞中，出会阴，沿腰背正中线上行，经项入脑，上巅顶，前行至龈交。为阳脉之海。",
+      "shichen": null
+    },
+    {
+      "code": "EX",
+      "name": "经外奇穴",
+      "pinyin": "jīng wài qí xué",
+      "category": "经外奇穴",
+      "element": null,
+      "color": "#5E548E",
+      "pairedWith": null,
+      "flowSummary": "不归属于十四经系统，但有固定位置与确切疗效的穴位。",
+      "shichen": null
+    }
+  ]
+}

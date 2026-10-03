@@ -1,0 +1,873 @@
+{
+ "acupoints": [
+  {
+   "code": "BL1",
+   "name": "睛明",
+   "pinyin": "jīng míng",
+   "meridian": "BL",
+   "location": "面部，目内眦角稍上方凹陷处。",
+   "effect": "疏风清热，明目",
+   "indications": "目赤肿痛、迎风流泪、近视、夜盲、色盲",
+   "method": "嘱患者闭目，左手轻推眼球向外固定，沿眶缘缓慢直刺0.3-0.5寸，不提插，出针后按压片刻防出血",
+   "pos": [
+    0.014,
+    1.62,
+    0.088
+   ]
+  },
+  {
+   "code": "BL2",
+   "name": "攒竹",
+   "pinyin": "zǎn zhú",
+   "meridian": "BL",
+   "location": "面部，眉头凹陷中，眶上切迹处。",
+   "effect": "疏风清热，通络明目",
+   "indications": "头痛、眉棱骨痛、目视不明、眼睑瞤动、呃逆",
+   "method": "平刺0.5-0.8寸或点刺；按揉缓解眼疲劳",
+   "pos": [
+    0.024,
+    1.626,
+    0.087
+   ]
+  },
+  {
+   "code": "BL10",
+   "name": "天柱",
+   "pinyin": "tiān zhù",
+   "meridian": "BL",
+   "location": "项部，斜方肌外缘之后发际凹陷中，约后发际正中旁开1.3寸。",
+   "effect": "疏风解表，清头明目",
+   "indications": "后头痛、项强、肩背痛、鼻塞、眩晕",
+   "method": "直刺或斜刺0.5-0.8寸，不可向内上方深刺",
+   "pos": [
+    0.06,
+    1.6,
+    -0.05
+   ]
+  },
+  {
+   "code": "BL11",
+   "name": "大杼",
+   "pinyin": "dà zhù",
+   "meridian": "BL",
+   "location": "背部，第1胸椎棘突下，旁开1.5寸（骨会）。",
+   "effect": "祛风解表，宣肃肺气",
+   "indications": "咳嗽、发热、项强、肩背痛、骨病",
+   "method": "斜刺0.5-0.8寸",
+   "pos": [
+    0.05,
+    1.465,
+    -0.07
+   ]
+  },
+  {
+   "code": "BL12",
+   "name": "风门",
+   "pinyin": "fēng mén",
+   "meridian": "BL",
+   "location": "背部，第2胸椎棘突下，旁开1.5寸。",
+   "effect": "宣肺解表，祛风止咳",
+   "indications": "伤风咳嗽、发热头痛、项强、胸背痛",
+   "method": "斜刺0.5-0.8寸；易感冒者常艾灸",
+   "pos": [
+    0.05,
+    1.445,
+    -0.075
+   ]
+  },
+  {
+   "code": "BL13",
+   "name": "肺俞",
+   "pinyin": "fèi shù",
+   "meridian": "BL",
+   "location": "背部，第3胸椎棘突下，旁开1.5寸（肺之背俞）。",
+   "effect": "宣肺止咳，化痰平喘",
+   "indications": "咳嗽、气喘、咯血、潮热盗汗、鼻塞",
+   "method": "斜刺0.5-0.8寸；咳嗽迁延可艾灸",
+   "common": true,
+   "pos": [
+    0.05,
+    1.415,
+    -0.08
+   ]
+  },
+  {
+   "code": "BL15",
+   "name": "心俞",
+   "pinyin": "xīn shù",
+   "meridian": "BL",
+   "location": "背部，第5胸椎棘突下，旁开1.5寸（心之背俞）。",
+   "effect": "养心安神，宽胸理气",
+   "indications": "心痛、心悸、失眠、健忘、癫痫、盗汗",
+   "method": "斜刺0.5-0.8寸",
+   "pos": [
+    0.05,
+    1.365,
+    -0.085
+   ]
+  },
+  {
+   "code": "BL17",
+   "name": "膈俞",
+   "pinyin": "gé shū",
+   "meridian": "BL",
+   "location": "背部，第7胸椎棘突下，旁开1.5寸（血会）。",
+   "effect": "活血化瘀，宽中和胃",
+   "indications": "呕吐、呃逆、贫血、瘀血诸证、荨麻疹",
+   "method": "斜刺0.5-0.8寸",
+   "pos": [
+    0.05,
+    1.31,
+    -0.09
+   ]
+  },
+  {
+   "code": "BL18",
+   "name": "肝俞",
+   "pinyin": "gān shù",
+   "meridian": "BL",
+   "location": "背部，第9胸椎棘突下，旁开1.5寸（肝之背俞）。",
+   "effect": "疏肝理气，养血明目",
+   "indications": "胁痛、目赤、目视不明、夜盲、癫痫、脊背痛",
+   "method": "斜刺0.5-0.8寸",
+   "pos": [
+    0.05,
+    1.255,
+    -0.09
+   ]
+  },
+  {
+   "code": "BL19",
+   "name": "胆俞",
+   "pinyin": "dǎn shù",
+   "meridian": "BL",
+   "location": "背部，第10胸椎棘突下，旁开1.5寸（胆之背俞）。",
+   "effect": "疏肝利胆，清热化湿",
+   "indications": "黄疸、口苦、胁痛、呕吐、胆道疾病",
+   "method": "斜刺0.5-0.8寸",
+   "pos": [
+    0.05,
+    1.225,
+    -0.09
+   ]
+  },
+  {
+   "code": "BL20",
+   "name": "脾俞",
+   "pinyin": "pí shù",
+   "meridian": "BL",
+   "location": "背部，第11胸椎棘突下，旁开1.5寸（脾之背俞）。",
+   "effect": "健脾益气，化湿统血",
+   "indications": "腹胀、泄泻、呕吐、痢疾、便血、水肿、乏力",
+   "method": "斜刺0.5-0.8寸；脾虚便溏常艾灸",
+   "common": true,
+   "pos": [
+    0.05,
+    1.195,
+    -0.09
+   ]
+  },
+  {
+   "code": "BL21",
+   "name": "胃俞",
+   "pinyin": "wèi shù",
+   "meridian": "BL",
+   "location": "背部，第12胸椎棘突下，旁开1.5寸（胃之背俞）。",
+   "effect": "和胃健脾，理中降逆",
+   "indications": "胃脘痛、呕吐、腹胀、肠鸣、胸胁痛",
+   "method": "斜刺0.5-0.8寸",
+   "pos": [
+    0.05,
+    1.165,
+    -0.09
+   ]
+  },
+  {
+   "code": "BL23",
+   "name": "肾俞",
+   "pinyin": "shèn shù",
+   "meridian": "BL",
+   "location": "腰部，第2腰椎棘突下，旁开1.5寸（肾之背俞）。",
+   "effect": "补肾益精，强腰壮骨",
+   "indications": "腰痛、遗精、阳痿、月经不调、耳鸣耳聋、水肿（补肾要穴）",
+   "method": "直刺0.8-1寸；腰膝酸软常艾灸或搓揉至发热",
+   "common": true,
+   "pos": [
+    0.05,
+    1.1,
+    -0.085
+   ]
+  },
+  {
+   "code": "BL25",
+   "name": "大肠俞",
+   "pinyin": "dà cháng shù",
+   "meridian": "BL",
+   "location": "腰部，第4腰椎棘突下，旁开1.5寸。",
+   "effect": "通调腑气，强腰膝",
+   "indications": "腹胀、泄泻、便秘、腰腿痛",
+   "method": "直刺1-1.5寸",
+   "pos": [
+    0.05,
+    1.045,
+    -0.08
+   ]
+  },
+  {
+   "code": "BL40",
+   "name": "委中",
+   "pinyin": "wěi zhōng",
+   "meridian": "BL",
+   "location": "腘横纹中点，股二头肌腱与半腱肌腱中间。",
+   "effect": "舒筋活络，凉血解毒（血郄）",
+   "indications": "腰背痛（腰背委中求）、下肢痿痹、腹痛吐泻、丹毒",
+   "method": "直刺1-1.5寸，或腘静脉点刺放血治急性腰扭伤、丹毒",
+   "common": true,
+   "pos": [
+    0.095,
+    0.475,
+    -0.085
+   ]
+  },
+  {
+   "code": "BL43",
+   "name": "膏肓",
+   "pinyin": "gāo huāng",
+   "meridian": "BL",
+   "location": "背部，第4胸椎棘突下，旁开3寸。",
+   "effect": "补虚益损，调理肺气",
+   "indications": "久咳、气喘、健忘、遗精、体虚羸瘦（补虚要穴）",
+   "method": "斜刺0.5-0.8寸；虚劳者多灸",
+   "pos": [
+    0.09,
+    1.415,
+    -0.075
+   ]
+  },
+  {
+   "code": "BL52",
+   "name": "志室",
+   "pinyin": "zhì shì",
+   "meridian": "BL",
+   "location": "腰部，第2腰椎棘突下，旁开3寸。",
+   "effect": "补肾壮腰，益精填髓",
+   "indications": "遗精、阳痿、小便不利、腰脊强痛",
+   "method": "斜刺0.5-0.8寸",
+   "pos": [
+    0.1,
+    1.1,
+    -0.075
+   ]
+  },
+  {
+   "code": "BL57",
+   "name": "承山",
+   "pinyin": "chéng shān",
+   "meridian": "BL",
+   "location": "小腿后面正中，腓肠肌两肌腹之间凹陷顶点，伸足时人字沟处。",
+   "effect": "舒筋活络，理肠疗痔",
+   "indications": "小腿转筋（抽筋）、痔疾、便秘、腰腿拘急疼痛",
+   "method": "直刺1-2寸；腿抽筋时用力按揉",
+   "common": true,
+   "pos": [
+    0.1,
+    0.26,
+    -0.08
+   ]
+  },
+  {
+   "code": "BL58",
+   "name": "飞扬",
+   "pinyin": "fēi yáng",
+   "meridian": "BL",
+   "location": "小腿后面，外踝后，昆仑直上7寸，承山外下方1寸处。",
+   "effect": "祛风清热，舒筋活络",
+   "indications": "头痛、目眩、鼻塞、鼻衄、腰腿疼痛、痔疮",
+   "method": "直刺1-1.5寸",
+   "pos": [
+    0.115,
+    0.19,
+    -0.05
+   ]
+  },
+  {
+   "code": "BL60",
+   "name": "昆仑",
+   "pinyin": "kūn lún",
+   "meridian": "BL",
+   "location": "足部外踝后方，外踝尖与跟腱之间凹陷处。",
+   "effect": "疏风清热，舒筋活络",
+   "indications": "头痛、项强、腰骶疼痛、足踝肿痛、癫痫、难产",
+   "method": "直刺0.5-0.8寸；孕妇禁针",
+   "pos": [
+    0.095,
+    0.075,
+    -0.06
+   ]
+  },
+  {
+   "code": "BL62",
+   "name": "申脉",
+   "pinyin": "shēn mài",
+   "meridian": "BL",
+   "location": "足外侧部，外踝直下方凹陷中。",
+   "effect": "宁神安眠，舒筋活络",
+   "indications": "失眠、癫痫、头痛、眩晕、腰腿酸痛、目赤痛",
+   "method": "直刺0.3-0.5寸",
+   "pos": [
+    0.105,
+    0.045,
+    -0.045
+   ]
+  },
+  {
+   "code": "BL67",
+   "name": "至阴",
+   "pinyin": "zhì yīn",
+   "meridian": "BL",
+   "location": "足小趾末节外侧，距趾甲角0.1寸。",
+   "effect": "矫正胎位，通络下胎",
+   "indications": "胎位不正、滞产、头痛、目痛、鼻塞鼻衄",
+   "method": "浅刺0.1寸；胎位不正用艾条灸15-20分钟",
+   "pos": [
+    0.108,
+    0.005,
+    -0.005
+   ]
+  },
+  {
+   "code": "KI1",
+   "name": "涌泉",
+   "pinyin": "yǒng quán",
+   "meridian": "KI",
+   "location": "足底前1/3凹陷处，蜷足时足前缘凹陷处。",
+   "effect": "滋阴益肾，平肝熄风，醒脑开窍",
+   "indications": "头顶痛、眩晕、昏厥、癫痫、小儿惊风、失眠、高血压（肾经井穴）",
+   "method": "直刺0.5-0.8寸；睡前搓揉涌泉100次引火下行助眠",
+   "common": true,
+   "pos": [
+    0.1,
+    0.005,
+    0.09
+   ]
+  },
+  {
+   "code": "KI3",
+   "name": "太溪",
+   "pinyin": "tài xī",
+   "meridian": "KI",
+   "location": "足内侧，内踝后方，内踝尖与跟腱之间凹陷处。",
+   "effect": "滋阴益肾，壮阳强腰",
+   "indications": "头痛目眩、咽喉肿痛、牙痛、耳鸣耳聋、咳嗽气喘、月经不调、失眠、腰痛（肾经原穴）",
+   "method": "直刺0.5-0.8寸；肾虚诸证常按揉",
+   "common": true,
+   "pos": [
+    0.075,
+    0.075,
+    -0.045
+   ]
+  },
+  {
+   "code": "KI6",
+   "name": "照海",
+   "pinyin": "zhào hǎi",
+   "meridian": "KI",
+   "location": "足内侧，内踝尖下方凹陷处。",
+   "effect": "滋阴清热，利咽安神",
+   "indications": "咽喉干燥、失眠、癫痫、月经不调、便秘",
+   "method": "直刺0.5-0.8寸",
+   "pos": [
+    0.08,
+    0.04,
+    0.0
+   ]
+  },
+  {
+   "code": "KI7",
+   "name": "复溜",
+   "pinyin": "fù liū",
+   "meridian": "KI",
+   "location": "小腿内侧，太溪直上2寸，跟腱的前方。",
+   "effect": "补肾益阴，温阳利水",
+   "indications": "泄泻、水肿、腹胀、腿肿、盗汗、无汗或多汗、下肢痿痹",
+   "method": "直刺0.5-1寸",
+   "pos": [
+    0.085,
+    0.14,
+    -0.04
+   ]
+  },
+  {
+   "code": "KI20",
+   "name": "腹通谷",
+   "pinyin": "fù tōng gǔ",
+   "meridian": "KI",
+   "location": "上腹部，脐上5寸，前正中线旁开0.5寸。",
+   "effect": "健脾和胃，宁心安神",
+   "indications": "腹胀、呕吐、心痛、心悸",
+   "method": "直刺或斜刺0.5-0.8寸",
+   "pos": [
+    0.03,
+    1.2,
+    0.075
+   ]
+  },
+  {
+   "code": "KI27",
+   "name": "俞府",
+   "pinyin": "yú fǔ",
+   "meridian": "KI",
+   "location": "胸部，锁骨下缘，前正中线旁开2寸。",
+   "effect": "止咳平喘，和胃降逆",
+   "indications": "咳嗽、气喘、胸痛、呕吐",
+   "method": "斜刺或平刺0.5-0.8寸",
+   "pos": [
+    0.045,
+    1.44,
+    0.06
+   ]
+  },
+  {
+   "code": "RN1",
+   "name": "会阴",
+   "pinyin": "huì yīn",
+   "meridian": "RN",
+   "location": "会阴部，男性当阴囊根部与肛门连线的中点，女性当大阴唇后联合与肛门连线的中点。",
+   "effect": "醒神开窍，调经止带",
+   "indications": "昏迷、癫狂、遗尿、月经不调、痔疮",
+   "method": "直刺0.5-1寸，孕妇慎用"
+  },
+  {
+   "code": "RN4",
+   "name": "关元",
+   "pinyin": "guān yuán",
+   "meridian": "RN",
+   "location": "下腹部，前正中线上，脐中下3寸。",
+   "effect": "培元固本，温阳益气（人身元气之根）",
+   "indications": "遗精阳痿、月经不调、痛经、遗尿、虚劳羸瘦、中风脱证（保健大穴）",
+   "method": "直刺1-2寸，需排尿后；虚寒体质常艾灸",
+   "common": true,
+   "pos": [
+    0,
+    0.995,
+    0.075
+   ]
+  },
+  {
+   "code": "RN6",
+   "name": "气海",
+   "pinyin": "qì hǎi",
+   "meridian": "RN",
+   "location": "下腹部，前正中线上，脐中下1.5寸。",
+   "effect": "益气补虚，升阳固脱",
+   "indications": "气虚乏力、腹痛、泄泻、遗尿、崩漏、虚脱（气之海）",
+   "method": "直刺1-2寸；气虚下陷者艾灸",
+   "common": true,
+   "pos": [
+    0,
+    1.03,
+    0.08
+   ]
+  },
+  {
+   "code": "RN8",
+   "name": "神阙",
+   "pinyin": "shén què",
+   "meridian": "RN",
+   "location": "腹中部，脐中央。",
+   "effect": "温阳救逆，健运脾胃",
+   "indications": "中风虚脱、四肢厥冷、腹痛泄泻、水肿臌胀",
+   "method": "禁刺；宜艾灸或隔盐灸，搓揉腹部",
+   "common": true,
+   "pos": [
+    0,
+    1.075,
+    0.085
+   ]
+  },
+  {
+   "code": "RN10",
+   "name": "下脘",
+   "pinyin": "xià wǎn",
+   "meridian": "RN",
+   "location": "上腹部，前正中线上，脐中上2寸。",
+   "effect": "健脾和胃，消积化滞",
+   "indications": "脘痛、腹胀、呕吐、食谷不化",
+   "method": "直刺1-1.5寸",
+   "pos": [
+    0,
+    1.12,
+    0.085
+   ]
+  },
+  {
+   "code": "RN12",
+   "name": "中脘",
+   "pinyin": "zhōng wǎn",
+   "meridian": "RN",
+   "location": "上腹部，前正中线上，脐中上4寸（胃之募，腑会）。",
+   "effect": "健脾和胃，消积化滞",
+   "indications": "胃脘痛、腹胀、呕吐、呃逆、吞酸、食欲不振（胃病要穴）",
+   "method": "直刺1-1.5寸；胃胀消化不良按揉3-5分钟",
+   "common": true,
+   "pos": [
+    0,
+    1.16,
+    0.085
+   ]
+  },
+  {
+   "code": "RN17",
+   "name": "膻中",
+   "pinyin": "dàn zhōng",
+   "meridian": "RN",
+   "location": "胸部，前正中线上，两乳头连线的中点（心包之募，气会）。",
+   "effect": "宽胸理气，宁心安神",
+   "indications": "胸闷、心悸、心痛、咳嗽、气喘、乳少、乳腺炎",
+   "method": "平刺0.3-0.5寸；胸闷心烦时按揉",
+   "common": true,
+   "pos": [
+    0,
+    1.355,
+    0.105
+   ]
+  },
+  {
+   "code": "RN22",
+   "name": "天突",
+   "pinyin": "tiān tū",
+   "meridian": "RN",
+   "location": "颈部，前正中线上，胸骨上窝中央。",
+   "effect": "宣肺止咳，化痰利咽",
+   "indications": "咳嗽、气喘、咽喉肿痛、梅核气、失音",
+   "method": "先直刺0.2-0.3寸，然后沿胸骨柄后缘缓慢向下刺0.5-1寸，不可过深",
+   "pos": [
+    0,
+    1.465,
+    0.06
+   ]
+  },
+  {
+   "code": "RN24",
+   "name": "承浆",
+   "pinyin": "chéng jiāng",
+   "meridian": "RN",
+   "location": "面部，颏唇沟的正中凹陷处。",
+   "effect": "祛风通络，生津敛液",
+   "indications": "口眼歪斜、口噤、流涎、齿龈肿痛、消渴",
+   "method": "斜刺0.3-0.5寸",
+   "pos": [
+    0,
+    1.548,
+    0.078
+   ]
+  },
+  {
+   "code": "DU1",
+   "name": "长强",
+   "pinyin": "cháng qiáng",
+   "meridian": "DU",
+   "location": "尾骨端与肛门连线的中点。",
+   "effect": "宁神镇痉，通便消痔",
+   "indications": "痔疾、脱肛、泄泻、痢疾、癫痫、腰脊尾骶部疼痛",
+   "method": "斜刺沿尾骨与直肠之间0.8-1寸",
+   "pos": [
+    0,
+    0.955,
+    -0.06
+   ]
+  },
+  {
+   "code": "DU3",
+   "name": "腰阳关",
+   "pinyin": "yāo yáng guān",
+   "meridian": "DU",
+   "location": "腰部，后正中线上，第4腰椎棘突下凹陷中。",
+   "effect": "祛寒除湿，舒筋活络",
+   "indications": "腰骶痛、下肢痿痹、月经不调、遗精阳痿",
+   "method": "直刺0.8-1.5寸",
+   "pos": [
+    0,
+    1.045,
+    -0.07
+   ]
+  },
+  {
+   "code": "DU4",
+   "name": "命门",
+   "pinyin": "mìng mén",
+   "meridian": "DU",
+   "location": "腰部，后正中线上，第2腰椎棘突下凹陷中。",
+   "effect": "温肾壮阳，强腰固本",
+   "indications": "腰脊强痛、遗精阳痿、月经不调、泄泻、畏寒肢冷（生命之门）",
+   "method": "直刺0.5-1寸；阳虚怕冷常艾灸",
+   "common": true,
+   "pos": [
+    0,
+    1.1,
+    -0.075
+   ]
+  },
+  {
+   "code": "DU9",
+   "name": "至阳",
+   "pinyin": "zhì yáng",
+   "meridian": "DU",
+   "location": "背部，后正中线上，第7胸椎棘突下凹陷中。",
+   "effect": "利胆退黄，宽胸宣肺",
+   "indications": "黄疸、胸胁胀痛、咳嗽气喘、脊背强痛",
+   "method": "向上斜刺0.5-1寸",
+   "pos": [
+    0,
+    1.31,
+    -0.09
+   ]
+  },
+  {
+   "code": "DU12",
+   "name": "身柱",
+   "pinyin": "shēn zhù",
+   "meridian": "DU",
+   "location": "背部，后正中线上，第3胸椎棘突下凹陷中。",
+   "effect": "宣肺止咳，宁神益智",
+   "indications": "咳嗽、气喘、癫痫、脊背强痛、小儿发育不良",
+   "method": "向上斜刺0.5-1寸；小儿常灸可强身",
+   "pos": [
+    0,
+    1.415,
+    -0.08
+   ]
+  },
+  {
+   "code": "DU14",
+   "name": "大椎",
+   "pinyin": "dà zhuī",
+   "meridian": "DU",
+   "location": "后正中线上，第7颈椎棘突下凹陷中。",
+   "effect": "清热解表，截疟止痫（诸阳之会）",
+   "indications": "发热、感冒、咳嗽、项强、癫痫、骨蒸盗汗、风疹（退热要穴）",
+   "method": "向上斜刺0.5-1寸；外感发热按揉或艾灸",
+   "common": true,
+   "pos": [
+    0,
+    1.49,
+    -0.06
+   ]
+  },
+  {
+   "code": "DU16",
+   "name": "风府",
+   "pinyin": "fēng fǔ",
+   "meridian": "DU",
+   "location": "项部，后发际正中直上1寸，枕外隆凸直下，两侧斜方肌之间凹陷中。",
+   "effect": "祛风清神，利窍醒脑",
+   "indications": "头痛、眩晕、颈项强痛、中风不语、癫痫、感冒",
+   "method": "直刺或向下斜刺0.5-1寸，不可向上深刺免伤延髓",
+   "pos": [
+    0,
+    1.585,
+    -0.07
+   ]
+  },
+  {
+   "code": "DU20",
+   "name": "百会",
+   "pinyin": "bǎi huì",
+   "meridian": "DU",
+   "location": "头部，前发际正中直上5寸，两耳尖连线中点。",
+   "effect": "醒脑开窍，升阳固脱（诸阳之会）",
+   "indications": "头痛眩晕、失眠健忘、中风失语、脱肛、阴挺、精神不振",
+   "method": "平刺0.5-0.8寸；头顶百会按揉提神升阳",
+   "common": true,
+   "pos": [
+    0,
+    1.72,
+    -0.01
+   ]
+  },
+  {
+   "code": "DU25",
+   "name": "素髎",
+   "pinyin": "sù liáo",
+   "meridian": "DU",
+   "location": "面部，鼻尖正中央。",
+   "effect": "醒神开窍，升阳救逆",
+   "indications": "昏迷、晕厥、新生儿窒息、鼻塞、鼻衄、酒渣鼻",
+   "method": "向上斜刺0.3-0.5寸，或点刺出血",
+   "pos": [
+    0,
+    1.578,
+    0.088
+   ]
+  },
+  {
+   "code": "DU26",
+   "name": "水沟",
+   "pinyin": "shuǐ gōu",
+   "meridian": "DU",
+   "location": "面部，人中沟正中线上1/3与下2/3交点处。",
+   "effect": "醒脑开窍，急救要穴",
+   "indications": "昏迷、晕厥、中暑、癫痫、急性腰扭伤、口眼歪斜（即人中穴）",
+   "method": "向上斜刺0.3-0.5寸；急掐人中可急救醒神",
+   "common": true,
+   "pos": [
+    0,
+    1.568,
+    0.084
+   ]
+  },
+  {
+   "code": "EX-HN1",
+   "name": "四神聪",
+   "pinyin": "sì shén cōng",
+   "meridian": "EX",
+   "location": "头顶部，百会前后左右各旁开1寸，共4穴。",
+   "effect": "镇静安神，聪耳明目",
+   "indications": "失眠、健忘、癫痫、头痛、眩晕、脑瘫",
+   "method": "平刺0.5-0.8寸",
+   "pos": [
+    0.028,
+    1.712,
+    0.01
+   ]
+  },
+  {
+   "code": "EX-HN3",
+   "name": "印堂",
+   "pinyin": "yìn táng",
+   "meridian": "EX",
+   "location": "额部，两眉头连线中点。",
+   "effect": "宁神醒脑，祛风通窍",
+   "indications": "失眠、头痛、眩晕、鼻塞、眉棱骨痛、小儿惊风",
+   "method": "提捏局部皮肤平刺0.3-0.5寸；睡前按揉助眠",
+   "common": true,
+   "pos": [
+    0,
+    1.615,
+    0.088
+   ]
+  },
+  {
+   "code": "EX-HN4",
+   "name": "鱼腰",
+   "pinyin": "yú yāo",
+   "meridian": "EX",
+   "location": "额部，瞳孔直上，眉毛中。",
+   "effect": "疏风明目",
+   "indications": "眉棱骨痛、眼睑瞤动、眼睑下垂、口眼歪斜",
+   "method": "平刺0.3-0.5寸",
+   "pos": [
+    0.028,
+    1.625,
+    0.085
+   ]
+  },
+  {
+   "code": "EX-HN5",
+   "name": "太阳",
+   "pinyin": "tài yáng",
+   "meridian": "EX",
+   "location": "颞部，眉梢与目外眦之间向后约一横指凹陷处。",
+   "effect": "疏风清热，明目止痛",
+   "indications": "头痛、偏头痛、牙痛、面瘫、目赤肿痛、视疲劳",
+   "method": "直刺或斜刺0.3-0.5寸，或点刺出血；疲劳头痛按揉最常用",
+   "common": true,
+   "pos": [
+    0.072,
+    1.63,
+    0.062
+   ]
+  },
+  {
+   "code": "EX-HN6",
+   "name": "耳尖",
+   "pinyin": "ěr jiān",
+   "meridian": "EX",
+   "location": "耳廓向前对折的上部尖端处。",
+   "effect": "清热泻火，平肝熄风",
+   "indications": "目赤肿痛、麦粒肿、咽喉肿痛、发热、高血压",
+   "method": "点刺出血",
+   "pos": [
+    0.085,
+    1.665,
+    -0.005
+   ]
+  },
+  {
+   "code": "EX-B1",
+   "name": "定喘",
+   "pinyin": "dìng chuǎn",
+   "meridian": "EX",
+   "location": "背部，第7颈椎棘突下（大椎）旁开0.5寸。",
+   "effect": "止咳平喘，宣肺",
+   "indications": "哮喘、咳嗽、支气管炎、荨麻疹、落枕",
+   "method": "直刺0.5-0.8寸",
+   "pos": [
+    0.035,
+    1.49,
+    -0.06
+   ]
+  },
+  {
+   "code": "EX-UE11",
+   "name": "十宣",
+   "pinyin": "shí xuān",
+   "meridian": "EX",
+   "location": "双手十指尖端，距指甲游离缘0.1寸，共10穴。",
+   "effect": "醒神开窍，清热泻火",
+   "indications": "昏迷、晕厥、中暑、高热、癫痫、手指麻木",
+   "method": "浅刺0.1-0.2寸，或点刺出血（急救常用）",
+   "common": true,
+   "pos": [
+    0.35,
+    0.905,
+    0.03
+   ]
+  },
+  {
+   "code": "EX-UE8",
+   "name": "外劳宫",
+   "pinyin": "wài láo gōng",
+   "meridian": "EX",
+   "location": "手背，第2、3掌骨间，掌指关节后0.5寸（落枕穴）。",
+   "effect": "舒筋活络，祛风止痛",
+   "indications": "落枕、手指麻木、手背红肿、小儿消化不良",
+   "method": "直刺0.5寸；落枕时按压配合转颈",
+   "pos": [
+    0.33,
+    0.945,
+    -0.04
+   ]
+  },
+  {
+   "code": "EX-LE2",
+   "name": "鹤顶",
+   "pinyin": "hè dǐng",
+   "meridian": "EX",
+   "location": "膝上部，髌骨底的中点上方凹陷处。",
+   "effect": "通利关节，祛风除湿",
+   "indications": "膝痛、腿痛、鹤膝风、下肢瘫痪",
+   "method": "直刺0.8-1寸",
+   "pos": [
+    0.1,
+    0.525,
+    0.045
+   ]
+  },
+  {
+   "code": "EX-LE4",
+   "name": "内膝眼",
+   "pinyin": "nèi xī yǎn",
+   "meridian": "EX",
+   "location": "屈膝，髌韧带内侧凹陷处。",
+   "effect": "通利关节，消肿止痛",
+   "indications": "膝关节酸痛、鹤膝风、腿痛、下肢无力",
+   "method": "向膝中斜刺0.8-1.5寸，或透刺外膝眼",
+   "pos": [
+    0.088,
+    0.505,
+    0.035
+   ]
+  }
+ ]
+}

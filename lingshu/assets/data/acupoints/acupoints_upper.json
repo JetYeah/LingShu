@@ -1,0 +1,619 @@
+{
+ "acupoints": [
+  {
+   "code": "LU1",
+   "name": "中府",
+   "pinyin": "zhōng fǔ",
+   "meridian": "LU",
+   "location": "胸前壁外上方，前正中线旁开6寸，平第1肋间隙。",
+   "effect": "宣肺理气，止咳平喘",
+   "indications": "咳嗽、气喘、胸痛、肩背痛",
+   "method": "按揉2-3分钟；向外出斜刺0.5-0.8寸，不可向内深刺以免伤肺",
+   "common": true,
+   "pos": [
+    0.105,
+    1.4,
+    0.06
+   ]
+  },
+  {
+   "code": "LU5",
+   "name": "尺泽",
+   "pinyin": "chǐ zé",
+   "meridian": "LU",
+   "location": "肘横纹中，肱二头肌腱桡侧凹陷处。",
+   "effect": "清宣肺气，泻火降逆",
+   "indications": "咳嗽、咯血、咽喉肿痛、中暑、肘臂挛痛",
+   "method": "直刺0.8-1.2寸；咽痛可点刺放血；按揉3分钟",
+   "common": true,
+   "pos": [
+    0.235,
+    1.19,
+    0.04
+   ]
+  },
+  {
+   "code": "LU6",
+   "name": "孔最",
+   "pinyin": "kǒng zuì",
+   "meridian": "LU",
+   "location": "前臂掌面桡侧，腕横纹上7寸，尺泽与太渊连线上。",
+   "effect": "清热止血，润肺理气",
+   "indications": "咯血、咳嗽气喘、痔疮出血、肘臂挛痛",
+   "method": "直刺0.5-1寸；按揉2-3分钟",
+   "pos": [
+    0.268,
+    1.09,
+    0.03
+   ]
+  },
+  {
+   "code": "LU7",
+   "name": "列缺",
+   "pinyin": "liè quē",
+   "meridian": "LU",
+   "location": "前臂桡侧缘，桡骨茎突上方，腕横纹上1.5寸，两肌腱之间。",
+   "effect": "宣肺解表，通络止痛，利水",
+   "indications": "外感头痛、颈项强痛、咳嗽、鼻塞（头项寻列缺）",
+   "method": "向肘部斜刺0.2-0.3寸；按揉2-3分钟缓解颈项不适",
+   "common": true,
+   "pos": [
+    0.288,
+    1.0,
+    0.035
+   ]
+  },
+  {
+   "code": "LU9",
+   "name": "太渊",
+   "pinyin": "tài yuān",
+   "meridian": "LU",
+   "location": "腕掌侧横纹桡侧，桡动脉搏动处。",
+   "effect": "补肺益气，止咳化痰",
+   "indications": "咳嗽、气喘、咳血、腕痛、无脉症",
+   "method": "避开桡动脉直刺0.2-0.3寸；轻揉",
+   "pos": [
+    0.297,
+    1.0,
+    0.028
+   ]
+  },
+  {
+   "code": "LU10",
+   "name": "鱼际",
+   "pinyin": "yú jì",
+   "meridian": "LU",
+   "location": "第1掌骨中点桡侧，赤白肉际处。",
+   "effect": "清肺热，利咽喉",
+   "indications": "咽喉肿痛、咳嗽、发热、失音",
+   "method": "直刺0.5-0.8寸；按揉",
+   "pos": [
+    0.33,
+    0.935,
+    0.045
+   ]
+  },
+  {
+   "code": "LU11",
+   "name": "少商",
+   "pinyin": "shào shāng",
+   "meridian": "LU",
+   "location": "拇指末节桡侧，距指甲角0.1寸。",
+   "effect": "清热利咽，醒脑开窍",
+   "indications": "咽喉肿痛、发热、昏迷、指端麻木",
+   "method": "浅刺0.1寸或点刺出血",
+   "common": true,
+   "pos": [
+    0.345,
+    0.93,
+    0.05
+   ]
+  },
+  {
+   "code": "LI1",
+   "name": "商阳",
+   "pinyin": "shāng yáng",
+   "meridian": "LI",
+   "location": "食指末节桡侧，距指甲角0.1寸。",
+   "effect": "清热解表，醒神开窍",
+   "indications": "咽喉肿痛、昏迷、耳鸣、齿痛",
+   "method": "浅刺0.1寸或点刺出血",
+   "pos": [
+    0.352,
+    0.935,
+    0.03
+   ]
+  },
+  {
+   "code": "LI4",
+   "name": "合谷",
+   "pinyin": "hé gǔ",
+   "meridian": "LI",
+   "location": "手背第1、2掌骨间，第2掌骨桡侧中点处。",
+   "effect": "疏风解表，镇痛通络",
+   "indications": "头痛、牙痛、面瘫、感冒发热、痛经（面口合谷收）",
+   "method": "直刺0.5-1寸；按揉双侧3-5分钟缓解头痛牙痛；孕妇禁针",
+   "common": true,
+   "pos": [
+    0.338,
+    0.938,
+    -0.005
+   ]
+  },
+  {
+   "code": "LI5",
+   "name": "阳溪",
+   "pinyin": "yáng xī",
+   "meridian": "LI",
+   "location": "腕背横纹桡侧，拇指上翘时两肌腱之间凹陷处。",
+   "effect": "清热散风，舒筋利节",
+   "indications": "头痛、腕部腱鞘炎、目赤肿痛、耳鸣",
+   "method": "直刺0.5-0.8寸",
+   "pos": [
+    0.308,
+    0.99,
+    0.005
+   ]
+  },
+  {
+   "code": "LI10",
+   "name": "手三里",
+   "pinyin": "shǒu sān lǐ",
+   "meridian": "LI",
+   "location": "前臂背面桡侧，肘横纹下2寸，阳溪与曲池连线上。",
+   "effect": "通经活络，调理肠胃",
+   "indications": "肘臂麻木酸痛、腹胀、腹泻",
+   "method": "直刺0.8-1.2寸；按揉",
+   "pos": [
+    0.252,
+    1.12,
+    0.015
+   ]
+  },
+  {
+   "code": "LI11",
+   "name": "曲池",
+   "pinyin": "qū chí",
+   "meridian": "LI",
+   "location": "肘横纹外侧端，屈肘时尺泽与肱骨外上髁连线中点。",
+   "effect": "清热解表，疏经活络",
+   "indications": "发热、高血压、肘臂痛、荨麻疹、湿疹",
+   "method": "直刺1-1.5寸；按揉3-5分钟",
+   "common": true,
+   "pos": [
+    0.255,
+    1.185,
+    0.01
+   ]
+  },
+  {
+   "code": "LI15",
+   "name": "肩髃",
+   "pinyin": "jiān yú",
+   "meridian": "LI",
+   "location": "肩峰前下方，臂外展时肩峰前下方凹陷处。",
+   "effect": "祛风清热，通利关节",
+   "indications": "肩痛不举、上肢不遂、瘾疹",
+   "method": "直刺或向下斜刺0.8-1.5寸",
+   "pos": [
+    0.2,
+    1.425,
+    0.005
+   ]
+  },
+  {
+   "code": "LI20",
+   "name": "迎香",
+   "pinyin": "yíng xiāng",
+   "meridian": "LI",
+   "location": "鼻翼外缘中点旁开，鼻唇沟中。",
+   "effect": "散风清热，通利鼻窍",
+   "indications": "鼻塞、鼻炎、面瘫、面痒",
+   "method": "斜刺或平刺0.3-0.5寸；鼻塞时按揉片刻可通鼻",
+   "common": true,
+   "pos": [
+    0.032,
+    1.588,
+    0.082
+   ]
+  },
+  {
+   "code": "HT1",
+   "name": "极泉",
+   "pinyin": "jí quán",
+   "meridian": "HT",
+   "location": "腋窝顶点，腋动脉搏动处。",
+   "effect": "宽胸理气，通经活络",
+   "indications": "心痛、胸闷、上肢麻木冷痛",
+   "method": "避开动脉直刺0.3-0.5寸；弹拨可缓解上肢麻木",
+   "pos": [
+    0.15,
+    1.41,
+    0.0
+   ]
+  },
+  {
+   "code": "HT3",
+   "name": "少海",
+   "pinyin": "shǎo hǎi",
+   "meridian": "HT",
+   "location": "屈肘，肘横纹内侧端与肱骨内上髁连线中点。",
+   "effect": "宁心安神，通络止痛",
+   "indications": "心痛、肘臂挛痛麻木、头项痛",
+   "method": "直刺0.5-1寸",
+   "pos": [
+    0.225,
+    1.185,
+    -0.03
+   ]
+  },
+  {
+   "code": "HT7",
+   "name": "神门",
+   "pinyin": "shén mén",
+   "meridian": "HT",
+   "location": "腕掌侧横纹尺侧端，尺侧腕屈肌腱桡侧凹陷处。",
+   "effect": "宁心安神",
+   "indications": "失眠、健忘、心悸、神经衰弱（养心第一穴）",
+   "method": "直刺0.3-0.5寸；睡前按揉2-3分钟助眠",
+   "common": true,
+   "pos": [
+    0.298,
+    1.0,
+    0.045
+   ]
+  },
+  {
+   "code": "HT8",
+   "name": "少府",
+   "pinyin": "shào fǔ",
+   "meridian": "HT",
+   "location": "掌心第4、5掌骨之间，握拳小指尖处。",
+   "effect": "清心泻火，安神",
+   "indications": "心悸、胸痛、阴痒、小便不利、口舌生疮",
+   "method": "直刺0.3-0.5寸",
+   "pos": [
+    0.318,
+    0.945,
+    0.045
+   ]
+  },
+  {
+   "code": "HT9",
+   "name": "少冲",
+   "pinyin": "shào chōng",
+   "meridian": "HT",
+   "location": "小指末节桡侧，距指甲角0.1寸。",
+   "effect": "醒神开窍，清心泻热",
+   "indications": "心悸、心痛、昏迷、癫狂",
+   "method": "浅刺0.1寸或点刺出血",
+   "pos": [
+    0.346,
+    0.93,
+    0.0
+   ]
+  },
+  {
+   "code": "SI1",
+   "name": "少泽",
+   "pinyin": "shào zé",
+   "meridian": "SI",
+   "location": "小指末节尺侧，距指甲角0.1寸。",
+   "effect": "清热利咽，通乳开窍",
+   "indications": "乳汁不足、乳痈、昏迷、热病",
+   "method": "浅刺0.1寸或点刺出血",
+   "pos": [
+    0.35,
+    0.935,
+    -0.02
+   ]
+  },
+  {
+   "code": "SI3",
+   "name": "后溪",
+   "pinyin": "hòu xī",
+   "meridian": "SI",
+   "location": "微握拳，第5掌指关节后尺侧，掌横纹头赤白肉际处。",
+   "effect": "舒经利窍，宁神截疟",
+   "indications": "颈肩腰背痛、急性腰扭伤、盗汗、癫痫",
+   "method": "直刺0.5-1寸；伏案久坐者常滚揉可防颈椎病",
+   "common": true,
+   "pos": [
+    0.33,
+    0.945,
+    -0.03
+   ]
+  },
+  {
+   "code": "SI4",
+   "name": "腕骨",
+   "pinyin": "wàn gǔ",
+   "meridian": "SI",
+   "location": "手掌尺侧，第5掌骨基底与钩骨之间赤白肉际凹陷处。",
+   "effect": "舒筋活络，利湿退黄",
+   "indications": "腕痛指挛、黄疸、消渴",
+   "method": "直刺0.3-0.5寸",
+   "pos": [
+    0.315,
+    0.985,
+    -0.015
+   ]
+  },
+  {
+   "code": "SI9",
+   "name": "肩贞",
+   "pinyin": "jiān zhēn",
+   "meridian": "SI",
+   "location": "肩关节后下方，臂内收时腋后纹头上1寸。",
+   "effect": "通经活络，利肩臂",
+   "indications": "肩臂疼痛不举、耳鸣",
+   "method": "直刺1-1.5寸",
+   "pos": [
+    0.2,
+    1.4,
+    -0.04
+   ]
+  },
+  {
+   "code": "SI11",
+   "name": "天宗",
+   "pinyin": "tiān zōng",
+   "meridian": "SI",
+   "location": "肩胛部，冈下窝中央凹陷处。",
+   "effect": "理气消肿，舒筋活络",
+   "indications": "肩胛痛、肩周炎、乳痈、气喘",
+   "method": "直刺或斜刺0.5-1寸；按揉缓解肩背酸痛",
+   "common": true,
+   "pos": [
+    0.1,
+    1.42,
+    -0.095
+   ]
+  },
+  {
+   "code": "SI19",
+   "name": "听宫",
+   "pinyin": "tīng gōng",
+   "meridian": "SI",
+   "location": "耳屏前，下颌骨髁状突后方，张口呈凹陷处。",
+   "effect": "聪耳开窍",
+   "indications": "耳鸣、耳聋、中耳炎、牙痛",
+   "method": "张口直刺1-1.5寸",
+   "pos": [
+    0.075,
+    1.578,
+    0.0
+   ]
+  },
+  {
+   "code": "PC1",
+   "name": "天池",
+   "pinyin": "tiān chí",
+   "meridian": "PC",
+   "location": "第4肋间隙，乳头外1寸，前正中线旁开5寸。",
+   "effect": "宽胸理气，止咳消肿",
+   "indications": "胸闷、胁痛、腋下肿、乳痈",
+   "method": "斜刺或平刺0.5-0.8寸，不可深刺",
+   "pos": [
+    0.085,
+    1.335,
+    0.09
+   ]
+  },
+  {
+   "code": "PC3",
+   "name": "曲泽",
+   "pinyin": "qū zé",
+   "meridian": "PC",
+   "location": "肘横纹中，肱二头肌腱尺侧缘。",
+   "effect": "清暑泻热，和胃降逆",
+   "indications": "心痛、心悸、胃痛呕血、中暑",
+   "method": "直刺0.8-1寸；中暑可点刺放血",
+   "common": true,
+   "pos": [
+    0.225,
+    1.185,
+    0.03
+   ]
+  },
+  {
+   "code": "PC5",
+   "name": "间使",
+   "pinyin": "jiān shǐ",
+   "meridian": "PC",
+   "location": "前臂掌侧，腕横纹上3寸，两筋之间。",
+   "effect": "宽胸和胃，宁神截疟",
+   "indications": "心痛、心悸、胃痛呕吐、疟疾、癫痫",
+   "method": "直刺0.5-1寸",
+   "pos": [
+    0.28,
+    1.04,
+    0.03
+   ]
+  },
+  {
+   "code": "PC6",
+   "name": "内关",
+   "pinyin": "nèi guān",
+   "meridian": "PC",
+   "location": "前臂掌侧，腕横纹上2寸，掌长肌腱与桡侧腕屈肌腱之间。",
+   "effect": "宁心安神，和胃降逆，宽胸理气",
+   "indications": "心悸、胸闷、晕车晕船、恶心呕吐、失眠、胃痛（止呕要穴）",
+   "method": "直刺0.5-1寸；按揉3分钟缓解晕车恶心心悸",
+   "common": true,
+   "pos": [
+    0.282,
+    1.01,
+    0.03
+   ]
+  },
+  {
+   "code": "PC7",
+   "name": "大陵",
+   "pinyin": "dà líng",
+   "meridian": "PC",
+   "location": "腕掌横纹中点，两筋之间。",
+   "effect": "宁心安神，清心泻火",
+   "indications": "心痛心悸、胃痛呕吐、口臭、腕痛",
+   "method": "直刺0.3-0.5寸",
+   "pos": [
+    0.295,
+    1.0,
+    0.03
+   ]
+  },
+  {
+   "code": "PC8",
+   "name": "劳宫",
+   "pinyin": "láo gōng",
+   "meridian": "PC",
+   "location": "掌心第2、3掌骨之间，握拳中指尖处。",
+   "effect": "清心安神，泻火除烦",
+   "indications": "中暑、心痛、癫狂痫、口疮口臭、手汗",
+   "method": "直刺0.3-0.5寸；紧张心烦时握拳抵劳宫",
+   "common": true,
+   "pos": [
+    0.322,
+    0.95,
+    0.03
+   ]
+  },
+  {
+   "code": "PC9",
+   "name": "中冲",
+   "pinyin": "zhōng chōng",
+   "meridian": "PC",
+   "location": "中指末节尖端中央。",
+   "effect": "醒神开窍，清心泻热",
+   "indications": "中风昏迷、中暑、心痛、小儿夜啼",
+   "method": "浅刺0.1寸或点刺出血",
+   "pos": [
+    0.348,
+    0.928,
+    0.028
+   ]
+  },
+  {
+   "code": "TE1",
+   "name": "关冲",
+   "pinyin": "guān chōng",
+   "meridian": "TE",
+   "location": "无名指末节尺侧，距指甲角0.1寸。",
+   "effect": "清热醒神，利咽",
+   "indications": "中暑、昏迷、咽喉肿痛、目赤",
+   "method": "浅刺0.1寸或点刺出血",
+   "pos": [
+    0.352,
+    0.932,
+    -0.01
+   ]
+  },
+  {
+   "code": "TE3",
+   "name": "中渚",
+   "pinyin": "zhōng zhǔ",
+   "meridian": "TE",
+   "location": "手背第4、5掌骨间，掌指关节近端凹陷处。",
+   "effect": "清头明目，舒筋活络",
+   "indications": "头痛、耳鸣耳聋、肩背肘臂酸痛",
+   "method": "直刺0.3-0.5寸",
+   "pos": [
+    0.338,
+    0.93,
+    -0.025
+   ]
+  },
+  {
+   "code": "TE4",
+   "name": "阳池",
+   "pinyin": "yáng chí",
+   "meridian": "TE",
+   "location": "腕背横纹中，指总伸肌腱尺侧缘凹陷中。",
+   "effect": "清热通络，生发三焦之气",
+   "indications": "腕痛、消渴口干、耳聋、疟疾",
+   "method": "直刺0.3-0.5寸",
+   "pos": [
+    0.305,
+    0.995,
+    -0.02
+   ]
+  },
+  {
+   "code": "TE5",
+   "name": "外关",
+   "pinyin": "wài guān",
+   "meridian": "TE",
+   "location": "前臂背侧，腕背横纹上2寸，尺骨与桡骨之间。",
+   "effect": "疏风解表，通经活络",
+   "indications": "热病、偏头痛、耳鸣耳聋、胁肋痛、上肢痿痹",
+   "method": "直刺0.5-1寸；按揉缓解偏头痛感冒",
+   "common": true,
+   "pos": [
+    0.285,
+    1.01,
+    -0.03
+   ]
+  },
+  {
+   "code": "TE6",
+   "name": "支沟",
+   "pinyin": "zhī gōu",
+   "meridian": "TE",
+   "location": "前臂背侧，腕背横纹上3寸，两骨之间。",
+   "effect": "清利三焦，通腑降逆",
+   "indications": "便秘（通便经验穴）、暴喑、胁肋痛、耳鸣耳聋",
+   "method": "直刺0.5-1寸；按揉助排便",
+   "common": true,
+   "pos": [
+    0.285,
+    1.035,
+    -0.03
+   ]
+  },
+  {
+   "code": "TE17",
+   "name": "翳风",
+   "pinyin": "yì fēng",
+   "meridian": "TE",
+   "location": "耳垂后方，乳突与下颌角之间凹陷处。",
+   "effect": "聪耳通窍，散风泻火",
+   "indications": "耳鸣耳聋、面瘫、腮腺炎、牙关不利",
+   "method": "直刺0.8-1.2寸",
+   "pos": [
+    0.082,
+    1.565,
+    -0.055
+   ]
+  },
+  {
+   "code": "TE21",
+   "name": "耳门",
+   "pinyin": "ěr mén",
+   "meridian": "TE",
+   "location": "耳屏上切迹前，下颌骨髁状突后缘凹陷处。",
+   "effect": "开窍聪耳，泻热活络",
+   "indications": "耳鸣、耳聋、牙痛、颞颌关节痛",
+   "method": "张口直刺0.5-1寸",
+   "pos": [
+    0.08,
+    1.59,
+    0.0
+   ]
+  },
+  {
+   "code": "TE23",
+   "name": "丝竹空",
+   "pinyin": "sī zhú kōng",
+   "meridian": "TE",
+   "location": "面部，眉梢凹陷处。",
+   "effect": "明目止痛，散风镇痉",
+   "indications": "头痛、目眩、目赤肿痛、眼睑瞤动",
+   "method": "平刺0.5-1寸",
+   "pos": [
+    0.045,
+    1.632,
+    0.075
+   ]
+  }
+ ]
+}
