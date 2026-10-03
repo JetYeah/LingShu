@@ -659,7 +659,10 @@ Future<void> showMetricEntry(
   final v2 = TextEditingController();
   final note = TextEditingController();
   var date = DateTime.now();
-  var timeLabel = _defaultTimeLabel(DateTime.now());
+  var timeLabel =
+      (metric.code == 'blood_sugar' || metric.name.contains('血糖'))
+          ? _defaultTimeLabel(DateTime.now())
+          : null;
   const labels = ['空腹', '早餐后', '午餐前', '午餐后', '晚餐前', '晚餐后', '睡前', '随机'];
   final ok = await showModalBottomSheet<bool>(
     context: context,
@@ -719,30 +722,33 @@ Future<void> showMetricEntry(
             ),
           ),
           const SizedBox(height: 12),
-          SizedBox(
-            height: 38,
-            child: ListView(
-              scrollDirection: Axis.horizontal,
-              children: [
-                for (final lb in labels)
-                  Padding(
-                    padding: const EdgeInsets.only(right: 7),
-                    child: ChoiceChip(
-                      label: Text(lb,
-                          style: TextStyle(
-                              fontSize: 12,
-                              color: timeLabel == lb
-                                  ? Colors.white
-                                  : LingShuColors.ink)),
-                      selected: timeLabel == lb,
-                      showCheckmark: false,
-                      visualDensity: VisualDensity.compact,
-                      onSelected: (_) => setSheet(() => timeLabel = lb),
+          // 测量时点仅对血糖类指标有意义（空腹/餐后对照参考区间），
+          // 血压/体重等显示"晚餐前"只会造成困惑
+          if (metric.code == 'blood_sugar' || metric.name.contains('血糖'))
+            SizedBox(
+              height: 38,
+              child: ListView(
+                scrollDirection: Axis.horizontal,
+                children: [
+                  for (final lb in labels)
+                    Padding(
+                      padding: const EdgeInsets.only(right: 7),
+                      child: ChoiceChip(
+                        label: Text(lb,
+                            style: TextStyle(
+                                fontSize: 12,
+                                color: timeLabel == lb
+                                    ? Colors.white
+                                    : LingShuColors.ink)),
+                        selected: timeLabel == lb,
+                        showCheckmark: false,
+                        visualDensity: VisualDensity.compact,
+                        onSelected: (_) => setSheet(() => timeLabel = lb),
+                      ),
                     ),
-                  ),
-              ],
+                ],
+              ),
             ),
-          ),
           const SizedBox(height: 10),
           TextField(controller: note,
               decoration: const InputDecoration(labelText: '备注（选填）')),
