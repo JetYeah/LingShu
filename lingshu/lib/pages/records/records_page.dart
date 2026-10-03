@@ -99,7 +99,8 @@ class _RecordsPageState extends ConsumerState<RecordsPage> {
             onPressed: () async {
               final q = await showSearch<String?>(
                 context: context,
-                delegate: _RecordSearchDelegate(),
+                delegate: _RecordSearchDelegate(
+                    [for (final r in records) r.title]),
               );
               if (q != null) setState(() => _query = q);
             },
@@ -315,7 +316,12 @@ class _RecordsPageState extends ConsumerState<RecordsPage> {
     );
   }
 
-  Widget _emptyState() => Center(
+  Widget _emptyState() {
+    // 有搜索词/筛选时与"真的没有档案"区分开，否则会被误读为数据丢失
+    final hasFilter =
+        _query.isNotEmpty || _typeFilter != null || _hospitalFilter != null;
+    if (!hasFilter) {
+      return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -330,9 +336,50 @@ class _RecordsPageState extends ConsumerState<RecordsPage> {
           ],
         ),
       );
+    }
+    final conditions = <String>[
+      if (_query.isNotEmpty) '搜索「$_query」',
+      if (_typeFilter != null) '类型「$_typeFilter」',
+      if (_hospitalFilter != null) '医院「$_hospitalFilter」',
+    ];
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.search_off_rounded,
+              size: 72, color: Colors.grey.shade300),
+          const SizedBox(height: 12),
+          const Text('没有找到匹配的档案',
+              style: TextStyle(fontSize: 16, color: LingShuColors.inkSoft)),
+          const SizedBox(height: 6),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 32),
+            child: Text('当前条件：${conditions.join(' · ')}',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                    fontSize: 12, color: LingShuColors.inkSoft.withValues(alpha: 0.8))),
+          ),
+          const SizedBox(height: 18),
+          OutlinedButton.icon(
+            onPressed: () => setState(() {
+              _query = '';
+              _typeFilter = null;
+              _hospitalFilter = null;
+            }),
+            icon: const Icon(Icons.filter_alt_off_outlined, size: 18),
+            label: const Text('清除搜索与筛选'),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
+/// 档案搜索：建议列表实时显示标题命中的档案，点击即按该词过滤主列表
 class _RecordSearchDelegate extends SearchDelegate<String?> {
+  _RecordSearchDelegate(this._titles);
+  final List<String> _titles;
+
   @override
   List<Widget>? buildActions(BuildContext context) => [
         IconButton(
@@ -346,12 +393,44 @@ class _RecordSearchDelegate extends SearchDelegate<String?> {
         onPressed: () => close(context, null),
       );
 
+  // 交互为"输入即过滤主列表"：用户按搜索键时回传查询词并收起搜索页。
+  // close（内部是 Navigator.pop）不能在 build 期间同步调用，
+  // 挪到帧渲染完成后执行，避免 release 下路由状态被破坏。
   @override
   Widget buildResults(BuildContext context) {
-    close(context, query.trim());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (context.mounted) close(context, query.trim());
+    });
     return const SizedBox.shrink();
   }
 
   @override
-  Widget buildSuggestions(BuildContext context) => const SizedBox.shrink();
+  Widget buildSuggestions(BuildContext context) {
+    final q = query.trim().toLowerCase();
+    if (q.isEmpty) return const SizedBox.shrink();
+    final hits = _titles
+        .where((t) => t.toLowerCase().contains(q))
+        .take(8)
+        .toList();
+    if (hits.isEmpty) {
+      return const Padding(
+        padding: EdgeInsets.all(24),
+        child: Center(
+          child: Text('没有匹配的档案，按搜索键查看筛选结果',
+              style: TextStyle(fontSize: 13, color: LingShuColors.inkSoft)),
+        ),
+      );
+    }
+    return ListView(
+      children: [
+        for (final t in hits)
+          ListTile(
+            leading: const Icon(Icons.description_outlined,
+                color: LingShuColors.gold),
+            title: Text(t, maxLines: 1, overflow: TextOverflow.ellipsis),
+            onTap: () => close(context, t),
+          ),
+      ],
+    );
+  }
 }

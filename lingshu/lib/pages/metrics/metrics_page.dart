@@ -389,7 +389,11 @@ class _MetricsPageState extends ConsumerState<MetricsPage> {
   }
 
   Future<bool?> _confirmMerges(List<_MergeProposal> proposals) {
+    // useRootNavigator：AI 整理耗时较长，用户常在等待期间切去别的标签页；
+    // 默认弹在本分支 navigator 上时页面处于 Offstage，确认框会"消失"，
+    // 整理流程也随之挂起。弹到根 navigator 保证任何页面下都立即可见。
     return showDialog<bool>(
+      useRootNavigator: true,
       context: context,
       builder: (c) => StatefulBuilder(
         builder: (c, setD) => AlertDialog(
