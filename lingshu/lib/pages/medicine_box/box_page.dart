@@ -408,16 +408,17 @@ class _BoxPageState extends ConsumerState<BoxPage> {
   Future<void> _openDrawer(BoxMedicine m) async {
     if (_sheetOpen) return;
     _sheetOpen = true;
-    try {
-      await showModalBottomSheet(
-          context: context,
-          isScrollControlled: true,
-          backgroundColor: Colors.transparent,
-          builder: (_) => _DrawerSheet(medicine: m));
-    } finally {
-      _sheetOpen = false;
-    }
-    _reloadMeds();
+    // 仅查看后关闭不得重载——_reloadMeds 会复位 AI 找药筛选，导致看完
+    // 详情就被打回筛选前的全量视图；AI 结果只在用户点横幅上的 × 时清除，
+    // 或抽屉内发生编辑保存/删除（清单变化，回调置位）后才重载复位。
+    var changed = false;
+    await showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (_) => _DrawerSheet(medicine: m, onChanged: () => changed = true));
+    _sheetOpen = false;
+    if (changed) _reloadMeds();
   }
 }
 
@@ -552,7 +553,8 @@ class _CabinetCell extends StatelessWidget {
 /// 点击药柜格：底部抽屉里"拉开柜门"——木门向左滑出，露出原始照片与操作
 class _DrawerSheet extends StatefulWidget {
   final BoxMedicine medicine;
-  const _DrawerSheet({required this.medicine});
+  final VoidCallback onChanged; // 抽屉内编辑保存/删除后回调（任何关闭路径都需通知）
+  const _DrawerSheet({required this.medicine, required this.onChanged});
 
   @override
   State<_DrawerSheet> createState() => _DrawerSheetState();
@@ -625,10 +627,11 @@ class _DrawerSheetState extends State<_DrawerSheet>
               Expanded(
                 child: OutlinedButton.icon(
                   onPressed: () async {
-                    await showModalBottomSheet(
+                    final saved = await showModalBottomSheet<bool>(
                         context: context,
                         isScrollControlled: true,
                         builder: (_) => _MedEditSheet.edit(m));
+                    if (saved == true) widget.onChanged();
                   },
                   icon: const Icon(Icons.edit_outlined, size: 17),
                   label: const Text('编辑'),
@@ -694,6 +697,7 @@ class _DrawerSheetState extends State<_DrawerSheet>
     await container
         .read(notificationServiceProvider)
         .cancelBoxMedicine(widget.medicine.id);
+    widget.onChanged();
     if (mounted) Navigator.pop(context);
   }
 }
@@ -1017,7 +1021,7 @@ class _MedEditSheetState extends ConsumerState<_MedEditSheet> {
       });
       return;
     }
-    if (mounted) Navigator.pop(context);
+    if (mounted) Navigator.pop(context, true);
   }
 
   Future<void> _pickExpire() async {
