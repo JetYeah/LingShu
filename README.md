@@ -34,8 +34,8 @@
 
 | | |
 | :---: | :---: |
-| <img src="lingshu/screenshots/04_穴位选中_手三里.png" width="280" alt="穴位选中"/> | <img src="lingshu/screenshots/06_穴位详情_天宗_SI11_灵枢原文.png" width="280" alt="穴位详情"/> |
-| 点亮穴位，查看定位与主治 | 穴位详情：拼音 · 归经 · 《灵枢》原文 |
+| <img src="lingshu/screenshots/04_挂图_肺经筛选.png" width="280" alt="经络筛选高亮"/> | <img src="lingshu/screenshots/06_穴位详情_内关.png" width="280" alt="穴位详情"/> |
+| 按经络筛选，循行线高亮 | 穴位详情：拼音 · 归经 · 主治 · 《灵枢》原文 |
 
 ### 📁 健康档案库 · 拍照即入库
 
@@ -44,7 +44,7 @@
 | | |
 | :---: | :---: |
 | <img src="lingshu/screenshots/10_档案详情_拍照入库.png" width="280" alt="档案详情"/> | <img src="lingshu/screenshots/11_档案库_时间线分组.png" width="280" alt="档案时间线"/> |
-| 原始报告与提取指标同屏核对 | 时间线分组，一屏纵览全家检查史 |
+| AI 识别归档：摘要与原件同屏 | 时间线分组，一屏纵览检查史 |
 
 ### 📈 指标追踪 · 趋势看得见
 
@@ -53,7 +53,7 @@
 | | |
 | :---: | :---: |
 | <img src="lingshu/screenshots/13_血压趋势图.png" width="280" alt="血压趋势"/> | <img src="lingshu/screenshots/12_健康指标列表.png" width="280" alt="指标列表"/> |
-| 参考区间带 + 异常点高亮 | 指标分类速览 |
+| 参考区间带 + 异常点高亮 | ✦ AI 归类后的指标分组速览 |
 
 ### 🗄️ 家庭小药箱 · 会提醒，还会找药
 
