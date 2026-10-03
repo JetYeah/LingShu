@@ -68,9 +68,8 @@ flutter:
   assets:
     - assets/data/
     - assets/data/acupoints/
-    - assets/herb_images/
-    - assets/herb_images_zy/
-    - assets/herb_plants/
+    # 中药配图（herb_images/herb_images_zy/herb_plants，约 73MB）已拆分为
+    # 可选下载包，运行时由 HerbPack 解析到应用文档目录，见 herb_pack.dart
     - assets/images/
     - assets/models/
 

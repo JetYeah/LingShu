@@ -5,6 +5,7 @@ import '../../core/theme.dart';
 import '../../providers.dart';
 import 'herb_detail_page.dart';
 import 'herb_identify_page.dart';
+import 'herb_pack_ui.dart';
 
 /// 百草图鉴：已收集中药列表 + 集齐进度（收集游戏）
 class HerbCollectionPage extends ConsumerWidget {
@@ -68,6 +69,7 @@ class HerbCollectionPage extends ConsumerWidget {
           final got = all.where((h) => collected.contains(h.name)).toList();
           final progress = total == 0 ? 0.0 : got.length / total;
           return Column(children: [
+            const HerbPackBanner(),
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
               child: Column(
@@ -149,20 +151,21 @@ class HerbCollectionPage extends ConsumerWidget {
                                   )
                                 : ClipRRect(
                                     borderRadius: BorderRadius.circular(8),
-                                    child: Image.asset(
-                                      h.img != null
+                                    child: HerbImage(
+                                      asset: h.img != null
                                           ? '${h.img}.jpg'
                                           : 'assets/herb_plants/${h.plantImg}.jpg',
                                       width: 46,
                                       height: 46,
-                                      fit: BoxFit.cover,
-                                      errorBuilder: (_, _, _) =>
-                                          CircleAvatar(
-                                              backgroundColor: LingShuColors
-                                                  .gold
-                                                  .withValues(alpha: 0.14),
-                                              child: Text(
-                                                  h.name.characters.first)),
+                                      placeholderBuilder: (_) => CircleAvatar(
+                                          backgroundColor: LingShuColors
+                                              .gold
+                                              .withValues(alpha: 0.14),
+                                          child: Text(
+                                              h.name.characters.first,
+                                              style: const TextStyle(
+                                                  color: LingShuColors.gold,
+                                                  fontWeight: FontWeight.bold))),
                                     ),
                                   ),
                             title: Text('${h.name}'

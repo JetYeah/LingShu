@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/services/herb_repo.dart';
 import '../../core/theme.dart';
 import '../../providers.dart';
+import 'herb_pack_ui.dart';
 
 /// 中药详情：性味归经 / 功效主治 / 验方配伍（含出处） / 成分药理 / 禁忌
 class HerbDetailPage extends ConsumerWidget {
@@ -41,6 +42,7 @@ class HerbDetailPage extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
         children: [
+          const HerbPackBanner(dismissable: false),
           if (herb.img != null)
             _banner('${herb.img}.jpg', '药材'),
           if (herb.plantImg != null)
@@ -151,21 +153,7 @@ class HerbDetailPage extends ConsumerWidget {
       child: Stack(children: [
         ClipRRect(
           borderRadius: BorderRadius.circular(16),
-          child: Image.asset(
-            asset,
-            height: 165,
-            width: double.infinity,
-            fit: BoxFit.cover,
-            errorBuilder: (_, e, __) => Container(
-              height: 165,
-              width: double.infinity,
-              color: LingShuColors.paperDeep,
-              alignment: Alignment.center,
-              child: Text('图片未能加载：$asset',
-                  style: const TextStyle(
-                      fontSize: 11, color: LingShuColors.inkSoft)),
-            ),
-          ),
+          child: HerbImage(asset: asset, height: 165, width: double.infinity),
         ),
         Positioned(
           right: 8,
