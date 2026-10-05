@@ -45,8 +45,8 @@ class _Msg {
 class _AiHomePageState extends ConsumerState<AiHomePage>
     with SingleTickerProviderStateMixin {
   late final AnimationController _breathe =
-      AnimationController(vsync: this, duration: const Duration(seconds: 4))
-        ..repeat();
+      AnimationController(vsync: this, duration: const Duration(seconds: 60))
+        ..repeat(); // 呼吸球 6s 周期取模；星野闪烁/天文位置用秒数
 
   final _input = TextEditingController();
   final _scroll = ScrollController();
@@ -503,8 +503,9 @@ class _AiHomePageState extends ConsumerState<AiHomePage>
         child: AnimatedBuilder(
           animation: _breathe,
           builder: (_, _) {
-            final breathe =
-                0.5 + 0.5 * math.sin(_breathe.value * 2 * math.pi);
+            // 呼吸球 6 秒周期（独立于星野，价值感一致但节奏不同）
+            final breathe = 0.5 +
+                0.5 * math.sin(_breathe.value * 2 * math.pi / 6);
             final scale =
                 _recording ? 1.0 + 0.10 * breathe : 1.0 + 0.07 * breathe;
             final color = _recording ? WuXing.fire : _gold;
