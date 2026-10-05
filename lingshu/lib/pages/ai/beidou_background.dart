@@ -67,9 +67,9 @@ class _BeidouPainter extends CustomPainter {
           Paint()..color = Colors.white.withValues(alpha: a));
     }
 
-    // 北斗主星：天极在画面上部 (宽/2, 高×0.11)；轨道半径压到
-    // min(宽, 高×0.10)×0.92，使摇光最远点 (cy + r) 停在标题带之上、
-    // Logo 区（约从 26% 高开始）之前——星野与品牌区不重叠
+    // 北斗主星：天极在画面上部 (宽/2, 高×0.11)；轨道半径取
+    // min(宽, 高×0.10)×0.92，摇光最远点停在 Logo 区（约 26% 高）之前；
+    // 星体本身画大（基础 5px + 呼吸增幅），远观也醒目
     final radius = math.min(size.width, size.height * 0.10) * 0.92;
     final pts = BeidouAstronomy.starPositionsPx(now,
         cx: size.width / 2,
@@ -87,32 +87,38 @@ class _BeidouPainter extends CustomPainter {
       canvas.drawLine(pts[i], pts[i + 1], linePaint);
     }
 
-    // 主星：独立呼吸周期 + 相位，金色光晕明灭如眨眼
+    // 主星：白↔亮黄呼吸——平常白色，闪烁时渐变为亮黄再回到白色；
+    // 每颗星独立周期(3~7s)与相位，如各自眨眼
+    const starWhite = Color(0xFFF2EFE6);
+    const starGold = Color(0xFFFFD873);
     for (var i = 0; i < pts.length; i++) {
       final breath = BeidouBackground._breath[i];
-      final wave =
-          math.sin((t / breath.period) * 2 * math.pi + breath.phase);
-      final glow = 0.35 + 0.65 * (0.5 + 0.5 * wave);
+      final wave = math.sin((t / breath.period) * 2 * math.pi + breath.phase);
+      final glow = 0.5 + 0.5 * wave; // 0..1 呼吸深度
       final c = pts[i];
-      final radius = 2.2 + 1.6 * glow;
+      // 颜色：白 → 亮黄 → 白
+      final color = Color.lerp(starWhite, starGold, glow)!;
+      final radius = 4.2 + 2.6 * glow;
+
+      // 光晕（同色系，随呼吸胀缩）
       canvas.drawCircle(
         c,
-        radius * 4.2,
+        radius * 3.2,
         Paint()
-          ..color = LingShuColors.gold.withValues(alpha: 0.10 * glow)
-          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8),
+          ..color = color.withValues(alpha: 0.10 + 0.16 * glow)
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 10),
       );
+      // 星体
       canvas.drawCircle(
         c,
         radius,
-        Paint()
-          ..color = LingShuColors.goldSoft
-              .withValues(alpha: 0.55 + 0.45 * glow),
+        Paint()..color = color.withValues(alpha: 0.82 + 0.18 * glow),
       );
+      // 芯
       canvas.drawCircle(
         c,
-        radius * 0.45,
-        Paint()..color = Colors.white.withValues(alpha: 0.5 + 0.5 * glow),
+        radius * 0.5,
+        Paint()..color = Colors.white.withValues(alpha: 0.55 + 0.45 * glow),
       );
     }
   }

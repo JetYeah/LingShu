@@ -45,8 +45,10 @@ class _Msg {
 class _AiHomePageState extends ConsumerState<AiHomePage>
     with SingleTickerProviderStateMixin {
   late final AnimationController _breathe =
-      AnimationController(vsync: this, duration: const Duration(seconds: 60))
-        ..repeat(); // 呼吸球 6s 周期取模；星野闪烁/天文位置用秒数
+      AnimationController(vsync: this, duration: const Duration(seconds: 6))
+        ..repeat(); // 呼吸球 6s 一息；星野用 Stopwatch 秒数驱动独立闪烁
+
+  final Stopwatch _clock = Stopwatch()..start(); // 星野闪烁的全局秒数
 
   final _input = TextEditingController();
   final _scroll = ScrollController();
@@ -64,6 +66,7 @@ class _AiHomePageState extends ConsumerState<AiHomePage>
   @override
   void dispose() {
     _breathe.dispose();
+    _clock.stop();
     _recorder.dispose();
     _input.dispose();
     _scroll.dispose();
@@ -186,9 +189,11 @@ class _AiHomePageState extends ConsumerState<AiHomePage>
         body: Stack(
           children: [
             // 星野动画只重建背景层；会话/输入区不随帧重建
+            // 星野层用真实秒数：北斗闪烁相位独立于呼吸球
             AnimatedBuilder(
               animation: _breathe,
-              builder: (_, _) => BeidouBackground(t: _breathe.value),
+              builder: (_, _) => BeidouBackground(
+                  t: _clock.elapsedMilliseconds / 1000.0),
             ),
             SafeArea(
               child: Column(
@@ -503,9 +508,9 @@ class _AiHomePageState extends ConsumerState<AiHomePage>
         child: AnimatedBuilder(
           animation: _breathe,
           builder: (_, _) {
-            // 呼吸球 6 秒周期（独立于星野，价值感一致但节奏不同）
-            final breathe = 0.5 +
-                0.5 * math.sin(_breathe.value * 2 * math.pi / 6);
+            // 呼吸球 6 秒一息（value 0..1 即相位）
+            final breathe =
+                0.5 + 0.5 * math.sin(_breathe.value * 2 * math.pi);
             final scale =
                 _recording ? 1.0 + 0.10 * breathe : 1.0 + 0.07 * breathe;
             final color = _recording ? WuXing.fire : _gold;
