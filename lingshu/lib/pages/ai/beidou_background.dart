@@ -23,14 +23,31 @@ class BeidouBackground extends StatelessWidget {
     return (r.nextDouble(), r.nextDouble() * 0.92, r.nextDouble());
   });
 
-  /// 闪烁编排：每颗星每 3 秒闪一次（白→亮黄→白，窗 0.8s），
-  /// 起始时刻确定性错开——7 颗在 3s 内均匀占位（间隔 3/7≈0.43s），
-  /// 窗 0.8s 下相邻两星最多重叠，任一时刻同时闪烁 ≤ 2 颗。
-  static final List<double> _blinkStart = List.generate(7, (i) => i * 3.0 / 7);
+  /// 闪烁编排：每颗星约 3 秒闪一次（白→亮黄→白，窗 0.7s），起始时刻
+  /// 随机（固定种子）且经冲突退避——生成时按时间轴扫描，任一时刻
+  /// 同时闪烁的星 ≤ 2，不满足就整体后移，直至全部排入。
+  /// 结果非均匀：闪烁次序随机、间隔随性，无「排队轮流」感。
+  static final List<double> _blinkStart = _computeBlinkStarts();
+  static List<double> _computeBlinkStarts() {
+    const win = 0.7;
+    final r = math.Random(1006);
+    final starts = <double>[];
+    for (var i = 0; i < 7; i++) {
+      var t = 0.0;
+      for (;;) {
+        t = i * 0.42 + r.nextDouble() * 0.5; // 随机散布（带基础间隔）
+        // 与已排星求交：任一时刻闪烁数 ≤2 → 新星窗口与至多 1 个已有窗口重叠
+        final conflicts = starts.where((s) => (s - t).abs() < win).length;
+        if (conflicts <= 1) break;
+      }
+      starts.add(t);
+    }
+    return starts;
+  }
 
-  /// 星 i 在时刻 t 的闪烁强度 0..1（1=最亮黄）。周期 3s，闪烁窗 0.8s。
+  /// 星 i 在时刻 t 的闪烁强度 0..1（1=最亮黄）。周期 3s，闪烁窗 0.7s。
   static double _blinkGlow(int i, double t) {
-    const cycle = 3.0, win = 0.8;
+    const cycle = 3.0, win = 0.7;
     final u = ((t - _blinkStart[i]) % cycle + cycle) % cycle;
     if (u > win) return 0; // 静默期：纯白
     // 白→黄→白：正弦半波
@@ -62,21 +79,22 @@ class _BeidouPainter extends CustomPainter {
       ).createShader(Offset.zero & size);
     canvas.drawRect(Offset.zero & size, bg);
 
-    // 散布小星：正弦微光，相位由第三随机数错开
+    // 散布小星：4~9 秒缓慢微光（相位由第三随机数错开），衬托主星呼吸
     for (final (x, y, ph) in BeidouBackground._stars) {
-      final a =
-          0.10 + 0.22 * (0.5 + 0.5 * math.sin((t * 2 * math.pi) + ph * 2 * math.pi));
+      final period = 4.0 + ph * 5.0;
+      final a = 0.10 +
+          0.20 * (0.5 + 0.5 * math.sin((t / period + ph) * 2 * math.pi));
       canvas.drawCircle(
           Offset(x * size.width, y * size.height), 0.8 + ph * 1.1,
           Paint()..color = Colors.white.withValues(alpha: a));
     }
 
-    // 北斗主星：北天极 = 原 Logo 位置（中轴、高 34%）——北斗绕它流转，
-    // 轨道半径 = 宽×0.42，横向近乎满屏
-    final radius = size.width * 0.42;
+    // 北斗主星：北天极 = 原 Logo 中心（中轴、屏高 35%）——北斗绕它流转；
+    // 轨道半径 = 宽×0.40，强化「绕原 Logo 位置旋转」的观感
+    final radius = size.width * 0.40;
     final pts = BeidouAstronomy.starPositionsPx(now,
         cx: size.width / 2,
-        cy: size.height * 0.34,
+        cy: size.height * 0.35,
         radiusPx: radius,
       ).map((s) => Offset(s.x, s.y)).toList();
 

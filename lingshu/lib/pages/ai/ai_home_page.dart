@@ -369,40 +369,37 @@ class _AiHomePageState extends ConsumerState<AiHomePage>
     return Padding(
       padding: const EdgeInsets.fromLTRB(14, 4, 14, 0),
       child: Column(children: [
-        // 快捷功能：贴在输入框上方（仅空闲无会话时显示）
+        // 快捷功能：贴在输入框上方（仅空闲无会话时显示），可换行不超屏
         if (_msgs.isEmpty)
-          SizedBox(
-            height: 38,
-            child: ListView(
-              scrollDirection: Axis.horizontal,
+          Padding(
+            padding: const EdgeInsets.only(bottom: 6),
+            child: Wrap(
+              spacing: 8,
+              runSpacing: 8,
               children: [
                 for (final (emoji, text) in const [
                   ('📊', '看看最近7天的血糖'),
                   ('🗂', '帮我把这张病历归档'),
                   ('🌿', '晚上睡不着怎么办'),
                 ])
-                  Padding(
-                    padding: const EdgeInsets.only(right: 8),
-                    // 自绘胶囊而非 ActionChip：应用主题会把 chip 背景强制成
-                    // 不透明 surface（白色），白字落在白底上会隐形（真机踩坑）
-                    child: GestureDetector(
-                      onTap: () => _input.text = text,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 14, vertical: 9),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.14),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(
-                              color:
-                                  Colors.white.withValues(alpha: 0.30)),
-                        ),
-                        child: Text('$emoji $text',
-                            style: const TextStyle(
-                                fontSize: 12.5,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.white)),
+                  // 自绘胶囊而非 ActionChip：应用主题会把 chip 背景强制成
+                  // 不透明 surface（白色），白字落在白底上会隐形（真机踩坑）
+                  GestureDetector(
+                    onTap: () => _input.text = text,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.14),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.30)),
                       ),
+                      child: Text('$emoji $text',
+                          style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white)),
                     ),
                   ),
               ],

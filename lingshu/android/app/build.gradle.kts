@@ -33,6 +33,8 @@ android {
 
 dependencies {
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
+    // 应用内更新 installApk 用 FileProvider 分享 APK
+    implementation("androidx.core:core-ktx:1.13.1")
 }
 
 kotlin {

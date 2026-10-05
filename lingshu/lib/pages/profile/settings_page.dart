@@ -3,8 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:local_auth/local_auth.dart';
 
 import '../../core/branding.dart';
+import '../../core/services/update_service.dart';
 import '../../core/theme.dart';
 import '../../providers.dart';
+import 'update_dialogs.dart';
 
 /// 设置：AI 配置 / 安全 / 关于
 class SettingsPage extends ConsumerStatefulWidget {
@@ -23,6 +25,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   late final TextEditingController _asrModel;
   bool _biometric = false;
   bool _canBiometric = false;
+  bool _checking = false;
+  String _version = '…';
 
   @override
   void initState() {
@@ -43,6 +47,30 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     LocalAuthentication().canCheckBiometrics.then((v) {
       if (mounted) setState(() => _canBiometric = v);
     });
+    UpdateService().currentVersion().then((v) {
+      if (mounted) setState(() => _version = v);
+    });
+  }
+
+  Future<void> _checkUpdate() async {
+    setState(() => _checking = true);
+    try {
+      final update = await UpdateService().checkLatest();
+      if (!mounted) return;
+      if (update.hasUpdate) {
+        await showUpdateFlow(context, update);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('已是最新版本（v${update.latestVersion}）')));
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('检查更新失败：$e')));
+      }
+    } finally {
+      if (mounted) setState(() => _checking = false);
+    }
   }
 
   Future<void> _saveAI() async {
@@ -162,6 +190,27 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                     setState(() => _biometric = v);
                   }
                 : null,
+          ),
+          const Divider(height: 32),
+          const Text('版本与更新',
+              style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+          const SizedBox(height: 4),
+          Text(
+            '当前版本 v$_version。检测到新版本时展示更新记录，确认后自动下载安装包并完成覆盖安装，数据不丢失。',
+            style: Theme.of(context)
+                .textTheme
+                .bodySmall
+                ?.copyWith(color: LingShuColors.inkSoft),
+          ),
+          const SizedBox(height: 10),
+          FilledButton(
+            onPressed: _checking ? null : _checkUpdate,
+            child: _checking
+                ? const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2))
+                : const Text('检查更新'),
           ),
           const Divider(height: 32),
           const Text('隐私声明',
