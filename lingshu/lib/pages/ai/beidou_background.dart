@@ -67,12 +67,13 @@ class _BeidouPainter extends CustomPainter {
           Paint()..color = Colors.white.withValues(alpha: a));
     }
 
-    // 北斗主星：天极在画面上部 (宽/2, 高×0.16)，摇光轨道半径 =
-    // min(宽, 高×0.34)×0.46 —— 任意季节/时刻七星都绕极留在星野区内
-    final radius = math.min(size.width, size.height * 0.34) * 0.46;
+    // 北斗主星：天极在画面上部 (宽/2, 高×0.11)；轨道半径压到
+    // min(宽, 高×0.10)×0.92，使摇光最远点 (cy + r) 停在标题带之上、
+    // Logo 区（约从 26% 高开始）之前——星野与品牌区不重叠
+    final radius = math.min(size.width, size.height * 0.10) * 0.92;
     final pts = BeidouAstronomy.starPositionsPx(now,
         cx: size.width / 2,
-        cy: size.height * 0.16,
+        cy: size.height * 0.11,
         radiusPx: radius,
       ).map((s) => Offset(s.x, s.y)).toList();
 
