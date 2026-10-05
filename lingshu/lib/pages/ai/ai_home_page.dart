@@ -278,15 +278,25 @@ class _AiHomePageState extends ConsumerState<AiHomePage>
                 ('🗂', '帮我把这张病历归档'),
                 ('🌿', '晚上睡不着怎么办'),
               ])
-                ActionChip(
-                  backgroundColor: Colors.white.withValues(alpha: 0.16),
-                  side: BorderSide(color: Colors.white.withValues(alpha: 0.32)),
-                  label: Text('$emoji $text',
-                      style: const TextStyle(
-                          fontSize: 12.5,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.white)),
-                  onPressed: () => _input.text = text,
+                // 自绘胶囊而非 ActionChip：应用主题会把 chip 背景强制成
+                // 不透明 surface（白色），白字落在白底上会隐形（真机踩坑）
+                GestureDetector(
+                  onTap: () => _input.text = text,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 14, vertical: 9),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.14),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.30)),
+                    ),
+                    child: Text('$emoji $text',
+                        style: const TextStyle(
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white)),
+                  ),
                 ),
             ],
           ),
