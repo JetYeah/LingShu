@@ -92,7 +92,7 @@ class Medications extends Table {
   IntColumn get profileId => integer()();
   TextColumn get name => text()();
   TextColumn get dosage => text().nullable()(); // 如 0.5g
-  TextColumn get mealRelation => text().nullable()(); // 餐前/餐中/餐后/空腹
+  TextColumn get mealRelation => text().nullable()(); // 服用时间：早/午/晚餐前后、餐前/餐中/餐后/空腹/睡前
   TextColumn get timesOfDay => text()(); // JSON 数组 ["08:00","20:00"]
   TextColumn get daysOfWeek => text().nullable()(); // JSON 数组 [1..7]，空=每天
   DateTimeColumn get startDate => dateTime().nullable()();

@@ -89,7 +89,7 @@ class HerbGuess {
 class MedDraft {
   final String name;
   final String? dosage;
-  final String? mealRelation; // 餐前/餐中/餐后/空腹/睡前
+  final String? mealRelation; // 早餐前/早餐后/…/晚餐后、餐前/餐中/餐后/空腹/睡前
   final List<String> times; // "HH:mm"
   final String? note;
   MedDraft({
@@ -535,7 +535,8 @@ class OcrService {
             '只输出 JSON，不要任何其他文字：\n'
             '{"medications": [{"name": "药品名（含剂型，如 阿莫西林胶囊）", '
             '"dosage": "单次剂量，如 0.5g/1粒，没有则 null", '
-            '"mealRelation": "餐前|餐中|餐后|空腹|睡前 之一，未提及其他写 null", '
+            '"mealRelation": "早餐前|早餐后|午餐前|午餐后|晚餐前|晚餐后|'
+            '餐前|餐中|餐后|空腹|睡前 之一（说明书写「饭前」等泛称用 餐前/餐后），未提及其他写 null", '
             '"times": ["08:00", "20:00"], '
             '"note": "频次与注意事项，如 每日两次，连服7天"}]}\n'
             'times 规则：有明确时间点（如 早8点、晚8点）按 24 小时制 HH:MM 输出；'
@@ -572,7 +573,10 @@ class OcrService {
     }
     final parsed =
         jsonDecode(txt.substring(start, end + 1)) as Map<String, dynamic>;
-    final meals = {'餐前', '餐中', '餐后', '空腹', '睡前'};
+    final meals = {
+      '早餐前', '早餐后', '午餐前', '午餐后', '晚餐前', '晚餐后',
+      '餐前', '餐中', '餐后', '空腹', '睡前',
+    };
     final out = <MedDraft>[];
     for (final m in (parsed['medications'] as List? ?? [])) {
       if (m is! Map<String, dynamic>) continue;

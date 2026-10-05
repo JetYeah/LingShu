@@ -41,7 +41,11 @@ class _MedEditPageState extends ConsumerState<MedEditPage> {
   bool _aiRunning = false;
   final List<MedDraft> _pending = []; // 多种药：逐种预填核对，保存后进下一种
 
-  static const _mealRelations = ['餐前', '餐中', '餐后', '空腹', '睡前'];
+  // 旧值（餐前/餐中/餐后/空腹/睡前）保留在尾部：历史数据仍在用，删除会导致下拉框回显失败
+  static const _mealRelations = [
+    '早餐前', '早餐后', '午餐前', '午餐后', '晚餐前', '晚餐后',
+    '餐前', '餐中', '餐后', '空腹', '睡前',
+  ];
 
   @override
   void initState() {

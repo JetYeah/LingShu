@@ -22,12 +22,22 @@ class MedicationsPage extends ConsumerStatefulWidget {
 }
 
 class _MedicationsPageState extends ConsumerState<MedicationsPage> {
+  static const _prefMergedView = 'meds.merged_view';
+  bool _merged = false; // 同一时间点的药合并成一张卡显示
+
   @override
   void initState() {
     super.initState();
+    _merged =
+        ref.read(sharedPreferencesProvider).getBool(_prefMergedView) ?? false;
     // 打开用药页时把全部在服药物的通知按新方案（周几重复）重排一遍：
     // 升级后清掉旧版"每天"通知，改用各药设置的重复日期
     _rescheduleAll();
+  }
+
+  void _toggleMerged() {
+    setState(() => _merged = !_merged);
+    ref.read(sharedPreferencesProvider).setBool(_prefMergedView, _merged);
   }
 
   Future<void> _rescheduleAll() async {
@@ -103,7 +113,17 @@ class _MedicationsPageState extends ConsumerState<MedicationsPage> {
     final meds = ref.watch(medicationsProvider).valueOrNull ?? const [];
     final db = ref.watch(dbProvider);
     return Scaffold(
-      appBar: AppBar(title: const Text('用药提醒')),
+      appBar: AppBar(
+        title: const Text('用药提醒'),
+        actions: [
+          IconButton(
+            tooltip: _merged ? '切换为按药物显示' : '同一时间的药合并显示',
+            icon: Icon(_merged ? Icons.merge_type : Icons.view_agenda_outlined,
+                color: _merged ? WuXing.water : null),
+            onPressed: _toggleMerged,
+          ),
+        ],
+      ),
       floatingActionButton: FloatingActionButton.extended(
         heroTag: 'add_med',
         onPressed: () => context.push('/medications/edit'),
@@ -129,7 +149,10 @@ class _MedicationsPageState extends ConsumerState<MedicationsPage> {
           else ...[
             _todayHeader(db, meds),
             const SizedBox(height: 8),
-            for (final m in meds) _MedCard(med: m),
+            if (_merged)
+              ..._mergedCards(meds)
+            else
+              for (final m in meds) _MedCard(med: m),
           ],
         ],
       ),
@@ -234,6 +257,71 @@ class _MedicationsPageState extends ConsumerState<MedicationsPage> {
               l.scheduledAt.isSmallerThanValue(dayEnd)))
         .watch();
   }
+
+  /// 合并视图：今天在服的药按时间点分组，同一 HH:mm 的多种药合为一张卡；
+  /// 今日不用服的药（未开始/已结束/暂停/休药）单独列在下方
+  List<Widget> _mergedCards(List<Medication> meds) {
+    final active = <Medication>[];
+    final inactive = <(Medication, String)>[];
+    for (final m in meds) {
+      final (ok, status) = medTodayStatus(m);
+      if (ok) {
+        active.add(m);
+      } else {
+        inactive.add((m, status ?? '今日休药'));
+      }
+    }
+    final groups = <String, List<Medication>>{};
+    for (final m in active) {
+      for (final t in (jsonDecode(m.timesOfDay) as List).cast<String>()) {
+        groups.putIfAbsent(t, () => []).add(m);
+      }
+    }
+    int mins(String t) =>
+        int.parse(t.split(':')[0]) * 60 + int.parse(t.split(':')[1]);
+    final times = groups.keys.toList()
+      ..sort((a, b) => mins(a).compareTo(mins(b)));
+    return [
+      Padding(
+        padding: const EdgeInsets.only(bottom: 10),
+        child: Text('同一时间服的药已合并为一张卡 · 点药名可编辑，底部按钮一键打卡（长按跳过）',
+            style: Theme.of(context)
+                .textTheme
+                .bodySmall
+                ?.copyWith(color: LingShuColors.inkSoft)),
+      ),
+      for (final t in times) _MergedTimeCard(time: t, meds: groups[t]!),
+      if (inactive.isNotEmpty) ...[
+        const Padding(
+          padding: EdgeInsets.only(top: 4, bottom: 8),
+          child: Text('今日不提醒',
+              style: TextStyle(
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w600,
+                  color: LingShuColors.inkSoft)),
+        ),
+        for (final (m, status) in inactive)
+          LSCard(
+            margin: const EdgeInsets.only(bottom: 10),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            onTap: () => context.push('/medications/edit?id=${m.id}'),
+            child: Row(children: [
+              const Icon(Icons.block_flipped,
+                  size: 15, color: LingShuColors.inkSoft),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(m.name,
+                    style: const TextStyle(
+                        fontWeight: FontWeight.w600, fontSize: 13.5)),
+              ),
+              Text('今日 $status',
+                  style: const TextStyle(
+                      fontSize: 11.5, color: LingShuColors.inkSoft)),
+            ]),
+          ),
+      ],
+    ];
+  }
 }
 
 class _MedCard extends ConsumerWidget {
@@ -254,39 +342,7 @@ class _MedCard extends ConsumerWidget {
     return sorted.map((d) => '周${_weekLabels[d - 1]}').join();
   }
 
-  List<(DateTime, DateTime)> get _pauses =>
-      (jsonDecode(med.pausePeriods ?? '[]') as List)
-          .map((e) => (DateTime.parse((e as Map)['f'] as String),
-              DateTime.parse(e['t'] as String)))
-          .toList();
-
-  /// 今天是否处于服药状态（区间内、非暂停、周几命中）
-  (bool, String?) _todayStatus() {
-    final now = DateTime.now();
-    final d = DateTime(now.year, now.month, now.day);
-    if (med.startDate != null &&
-        d.isBefore(DateTime(
-            med.startDate!.year, med.startDate!.month, med.startDate!.day))) {
-      return (false, '未开始');
-    }
-    if (med.endDate != null) {
-      final end =
-          DateTime(med.endDate!.year, med.endDate!.month, med.endDate!.day);
-      if (d.isAfter(end)) return (false, '已结束');
-    }
-    for (final pg in _pauses) {
-      final f = DateTime(pg.$1.year, pg.$1.month, pg.$1.day);
-      final t = DateTime(pg.$2.year, pg.$2.month, pg.$2.day);
-      if (!d.isBefore(f) && !d.isAfter(t)) return (false, '暂停中');
-    }
-    final days = (jsonDecode(med.daysOfWeek ?? '[1,2,3,4,5,6,7]') as List)
-        .map((e) => int.parse(e.toString()))
-        .toSet();
-    if (days.isNotEmpty && !days.contains(now.weekday)) {
-      return (false, '今日休药');
-    }
-    return (true, null);
-  }
+  List<(DateTime, DateTime)> get _pauses => medPauses(med);
 
   /// 区间/暂停摘要行（无内容返回空串）
   String get _periodLabel {
@@ -377,7 +433,7 @@ class _MedCard extends ConsumerWidget {
           ]),
           const SizedBox(height: 10),
           Builder(builder: (context) {
-            final (active, status) = _todayStatus();
+            final (active, status) = medTodayStatus(med);
             if (!active) {
               return Container(
                 width: double.infinity,
@@ -401,7 +457,7 @@ class _MedCard extends ConsumerWidget {
               spacing: 8,
               runSpacing: 8,
               children: [
-                for (final t in _times) _timeChip(ref, db, t, now),
+                for (final t in _times) _timeChip(db, t, now),
               ],
             );
           }),
@@ -409,7 +465,7 @@ class _MedCard extends ConsumerWidget {
     );
   }
 
-  Widget _timeChip(WidgetRef ref, AppDatabase db, String time, DateTime now) {
+  Widget _timeChip(AppDatabase db, String time, DateTime now) {
     final scheduled = DateTime(now.year, now.month, now.day,
         int.parse(time.split(':')[0]), int.parse(time.split(':')[1]));
     return StreamBuilder<List<MedicationLog>>(
@@ -422,9 +478,9 @@ class _MedCard extends ConsumerWidget {
           borderRadius: BorderRadius.circular(10),
           onTap: taken
               ? null
-              : () => _markTaken(ref, db, scheduled, taken: true),
+              : () => markMedTaken(db, med.id, scheduled, taken: true),
           onLongPress:
-              taken ? null : () => _markTaken(ref, db, scheduled, taken: false),
+              taken ? null : () => markMedTaken(db, med.id, scheduled, taken: false),
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
@@ -466,16 +522,6 @@ class _MedCard extends ConsumerWidget {
       },
     );
   }
-
-  Future<void> _markTaken(WidgetRef ref, AppDatabase db, DateTime scheduled,
-      {required bool taken}) async {
-    await db.into(db.medicationLogs).insert(MedicationLogsCompanion.insert(
-          medicationId: med.id,
-          scheduledAt: scheduled,
-          status: taken ? 'taken' : 'skipped',
-          takenAt: Value(taken ? DateTime.now() : null),
-        ));
-  }
 }
 
 Stream<List<MedicationLog>> watchMedLogsForDay(
@@ -488,4 +534,240 @@ Stream<List<MedicationLog>> watchMedLogsForDay(
             l.scheduledAt.isBiggerOrEqualValue(start) &
             l.scheduledAt.isSmallerOrEqualValue(end)))
       .watch();
+}
+
+/// 合并卡用：一次 watch 同一时间点多种药的打卡记录（±30 分钟窗口，
+/// 与 watchMedLogsForDay 的判定窗口保持一致）
+Stream<List<MedicationLog>> watchMedLogsForGroup(
+    AppDatabase db, List<int> medIds, DateTime scheduled) {
+  final start = scheduled.subtract(const Duration(minutes: 30));
+  final end = scheduled.add(const Duration(minutes: 30));
+  return (db.select(db.medicationLogs)
+        ..where((l) =>
+            l.medicationId.isIn(medIds) &
+            l.scheduledAt.isBiggerOrEqualValue(start) &
+            l.scheduledAt.isSmallerOrEqualValue(end)))
+      .watch();
+}
+
+/// 解析药物暂停时段 [(from, to)]（合并卡与单药卡共用）
+List<(DateTime, DateTime)> medPauses(Medication med) =>
+    (jsonDecode(med.pausePeriods ?? '[]') as List)
+        .map((e) => (DateTime.parse((e as Map)['f'] as String),
+            DateTime.parse(e['t'] as String)))
+        .toList();
+
+/// 今天是否处于服药状态（区间内、非暂停、周几命中）；不命中时返回原因
+(bool, String?) medTodayStatus(Medication med) {
+  final now = DateTime.now();
+  final d = DateTime(now.year, now.month, now.day);
+  if (med.startDate != null &&
+      d.isBefore(DateTime(
+          med.startDate!.year, med.startDate!.month, med.startDate!.day))) {
+    return (false, '未开始');
+  }
+  if (med.endDate != null) {
+    final end = DateTime(med.endDate!.year, med.endDate!.month, med.endDate!.day);
+    if (d.isAfter(end)) return (false, '已结束');
+  }
+  for (final pg in medPauses(med)) {
+    final f = DateTime(pg.$1.year, pg.$1.month, pg.$1.day);
+    final t = DateTime(pg.$2.year, pg.$2.month, pg.$2.day);
+    if (!d.isBefore(f) && !d.isAfter(t)) return (false, '暂停中');
+  }
+  final days = (jsonDecode(med.daysOfWeek ?? '[1,2,3,4,5,6,7]') as List)
+      .map((e) => int.parse(e.toString()))
+      .toSet();
+  if (days.isNotEmpty && !days.contains(now.weekday)) {
+    return (false, '今日休药');
+  }
+  return (true, null);
+}
+
+/// 打一条服药记录（taken=true 服用 / false 跳过）
+Future<void> markMedTaken(AppDatabase db, int medId, DateTime scheduled,
+    {required bool taken}) async {
+  await db.into(db.medicationLogs).insert(MedicationLogsCompanion.insert(
+        medicationId: medId,
+        scheduledAt: scheduled,
+        status: taken ? 'taken' : 'skipped',
+        takenAt: Value(taken ? DateTime.now() : null),
+      ));
+}
+
+/// 合并卡：同一时间点的多种药合为一张卡，一起显示、一键打卡；
+/// 点药名进编辑，底部按钮点按=全部服用、长按=全部跳过
+class _MergedTimeCard extends ConsumerWidget {
+  final String time;
+  final List<Medication> meds;
+  const _MergedTimeCard({required this.time, required this.meds});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final db = ref.watch(dbProvider);
+    final now = DateTime.now();
+    final scheduled = DateTime(now.year, now.month, now.day,
+        int.parse(time.split(':')[0]), int.parse(time.split(':')[1]));
+    return LSCard(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(14),
+      child: StreamBuilder<List<MedicationLog>>(
+        stream: watchMedLogsForGroup(
+            db, [for (final m in meds) m.id], scheduled),
+        builder: (context, snap) {
+          final logs = snap.data ?? const <MedicationLog>[];
+          bool takenOf(int medId) =>
+              logs.any((l) => l.medicationId == medId && l.status == 'taken');
+          bool skippedOf(int medId) =>
+              !takenOf(medId) &&
+              logs.any((l) => l.medicationId == medId && l.status == 'skipped');
+          final takenCount = meds.where((m) => takenOf(m.id)).length;
+          final allTaken = takenCount == meds.length;
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: WuXing.water.withValues(alpha: 0.10),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(Icons.alarm, color: WuXing.water, size: 20),
+                ),
+                const SizedBox(width: 10),
+                Text(time,
+                    style: const TextStyle(
+                        fontWeight: FontWeight.w700, fontSize: 17)),
+                const SizedBox(width: 8),
+                Text('${meds.length} 种药',
+                    style: const TextStyle(
+                        fontSize: 12, color: LingShuColors.inkSoft)),
+                const Spacer(),
+                Text(
+                    allTaken ? '已完成' : '已服 $takenCount/${meds.length}',
+                    style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: allTaken ? WuXing.wood : LingShuColors.inkSoft)),
+              ]),
+              const Divider(height: 18),
+              for (final m in meds)
+                InkWell(
+                  borderRadius: BorderRadius.circular(8),
+                  onTap: () => context.push('/medications/edit?id=${m.id}'),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 5),
+                    child: Row(children: [
+                      Icon(
+                        takenOf(m.id)
+                            ? Icons.check_circle
+                            : skippedOf(m.id)
+                                ? Icons.close
+                                : Icons.medication,
+                        size: 16,
+                        color: takenOf(m.id)
+                            ? WuXing.wood
+                            : skippedOf(m.id)
+                                ? LingShuColors.inkSoft
+                                : WuXing.wood.withValues(alpha: 0.55),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          [
+                            m.name,
+                            if (m.dosage?.isNotEmpty == true) '（${m.dosage}）',
+                          ].join(),
+                          style: TextStyle(
+                              fontSize: 13.5,
+                              fontWeight: FontWeight.w600,
+                              color:
+                                  skippedOf(m.id) ? LingShuColors.inkSoft : null,
+                              decoration: skippedOf(m.id)
+                                  ? TextDecoration.lineThrough
+                                  : null),
+                        ),
+                      ),
+                      if (m.mealRelation?.isNotEmpty == true)
+                        Text(m.mealRelation!,
+                            style: const TextStyle(
+                                fontSize: 11.5,
+                                color: LingShuColors.inkSoft)),
+                    ]),
+                  ),
+                ),
+              const SizedBox(height: 8),
+              if (allTaken)
+                Container(
+                  width: double.infinity,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+                  decoration: BoxDecoration(
+                    color: WuXing.wood.withValues(alpha: 0.14),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.done_all, size: 15, color: WuXing.wood),
+                      const SizedBox(width: 6),
+                      Text('这一时间的药已全部服用',
+                          style: const TextStyle(
+                              fontSize: 12.5, color: WuXing.wood)),
+                    ],
+                  ),
+                )
+            else
+              InkWell(
+                borderRadius: BorderRadius.circular(10),
+                onTap: () => _markGroup(
+                    db, scheduled, meds.where((m) => !takenOf(m.id)),
+                    taken: true),
+                onLongPress: () => _markGroup(
+                    db, scheduled,
+                    meds.where(
+                        (m) => !takenOf(m.id) && !skippedOf(m.id)),
+                    taken: false),
+                child: Container(
+                  width: double.infinity,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                        color: WuXing.water.withValues(alpha: 0.5)),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.done_all,
+                          size: 15, color: WuXing.water),
+                      const SizedBox(width: 6),
+                      Text(
+                          takenCount > 0
+                              ? '打卡其余 ${meds.length - takenCount} 种'
+                              : '一键打卡 ${meds.length} 种',
+                          style: const TextStyle(
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.w600,
+                              color: WuXing.water)),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Future<void> _markGroup(AppDatabase db, DateTime scheduled,
+      Iterable<Medication> targets, {required bool taken}) async {
+    for (final m in targets) {
+      await markMedTaken(db, m.id, scheduled, taken: taken);
+    }
+  }
 }
