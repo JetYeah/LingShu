@@ -658,7 +658,7 @@ class _MetricCard extends ConsumerWidget {
       s.map((e) => e.y).reduce((a, b) => a > b ? a : b) * 1.02;
 }
 
-/// 指标录入对话框（双值指标即血压：附带可选心率，与血压同一时刻入表）
+/// 指标录入对话框（双值指标即血压：附带可选心率与早/中/晚时段，同一时刻入表）
 Future<void> showMetricEntry(
     BuildContext context, WidgetRef ref, Metric metric) async {
   final v1 = TextEditingController();
@@ -666,8 +666,10 @@ Future<void> showMetricEntry(
   final hr = TextEditingController(); // 仅双值（血压）指标显示
   final note = TextEditingController();
   var date = DateTime.now();
-  var timeLabel =
-      (metric.code == 'blood_sugar' || metric.name.contains('血糖'))
+  // 测量时点：血糖为空腹/餐后档位；血压为早/中/晚时段（语音可填）；其余指标无
+  var timeLabel = metric.dualValue
+      ? _defaultPeriod(DateTime.now())
+      : (metric.code == 'blood_sugar' || metric.name.contains('血糖'))
           ? _defaultTimeLabel(DateTime.now())
           : null;
   const labels = ['空腹', '早餐后', '午餐前', '午餐后', '晚餐前', '晚餐后', '睡前', '随机'];
@@ -734,11 +736,13 @@ Future<void> showMetricEntry(
               ),
             ),
             const SizedBox(height: 10),
-            _SpeechVitalsButton(onFilled: (sys, dia, hrV) {
+            _SpeechVitalsButton(onFilled: (v) {
               setSheet(() {
-                v1.text = _fmtNum(sys);
-                if (dia != null) v2.text = _fmtNum(dia);
-                if (hrV != null) hr.text = _fmtNum(hrV);
+                v1.text = _fmtNum(v.sys);
+                if (v.dia != null) v2.text = _fmtNum(v.dia!);
+                if (v.hr != null) hr.text = _fmtNum(v.hr!);
+                if (v.date != null) date = v.date!;
+                if (v.period != null) timeLabel = v.period;
               });
             }),
           ],
@@ -758,6 +762,31 @@ Future<void> showMetricEntry(
               child: Text(DateFormat('yyyy-MM-dd').format(date)),
             ),
           ),
+          const SizedBox(height: 12),
+          // 测量时段（仅血压）：早/中/晚，语音口述可自动带上
+          if (metric.dualValue)
+            Row(children: [
+              const Text('测量时段',
+                  style:
+                      TextStyle(fontSize: 12.5, color: LingShuColors.inkSoft)),
+              const SizedBox(width: 10),
+              for (final p in const ['早上', '中午', '晚上'])
+                Padding(
+                  padding: const EdgeInsets.only(right: 7),
+                  child: ChoiceChip(
+                    label: Text(p,
+                        style: TextStyle(
+                            fontSize: 12,
+                            color: timeLabel == p
+                                ? Colors.white
+                                : LingShuColors.ink)),
+                    selected: timeLabel == p,
+                    showCheckmark: false,
+                    visualDensity: VisualDensity.compact,
+                    onSelected: (_) => setSheet(() => timeLabel = p),
+                  ),
+                ),
+            ]),
           const SizedBox(height: 12),
           // 测量时点仅对血糖类指标有意义（空腹/餐后对照参考区间），
           // 血压/体重等显示"晚餐前"只会造成困惑
@@ -815,6 +844,14 @@ Future<void> showMetricEntry(
 }
 
 String _fmtNum(double v) => v == v.roundToDouble() ? '${v.round()}' : '$v';
+
+/// 按当前时刻预选血压测量时段：免手动点选，多数情况直接保存即可
+String _defaultPeriod(DateTime now) {
+  final h = now.hour;
+  if (h < 11) return '早上';
+  if (h < 17) return '中午';
+  return '晚上';
+}
 
 /// 取「心率」指标（按名称匹配，兼容旧数据），没有则创建——
 /// 血压对话框里顺带记的心率与自测心率共用同一条趋势
@@ -898,10 +935,11 @@ String _defaultTimeLabel(DateTime now) {
   return '睡前';
 }
 
-/// 语音录入按钮：点按开始录音，说完再点按结束 → 转写 → 解析回填高压/低压/心率。
-/// 例句「高压一百四，低压九十，心率八十」或直接报数「140 90 80」
+/// 语音录入按钮：点按开始录音，说完再点按结束 → 转写 → 解析回填高压/低压/心率，
+/// 连带日期（今天/昨天/10月3号）与时段（早/中/晚）一起填。
+/// 例句「昨天早上 高压140 低压90 心率80」或直接报数「140 90 80」
 class _SpeechVitalsButton extends ConsumerStatefulWidget {
-  final void Function(double sys, double? dia, double? hr) onFilled;
+  final void Function(SpeechVitals v) onFilled;
   const _SpeechVitalsButton({required this.onFilled});
 
   @override
@@ -971,10 +1009,16 @@ class _SpeechVitalsButtonState extends ConsumerState<_SpeechVitalsButton> {
       if (v == null) {
         _toast('听到「$text」，未解析出数值，请手动填写');
       } else {
-        widget.onFilled(v.sys, v.dia, v.hr);
+        widget.onFilled(v);
+        final when = [
+          if (v.date != null)
+            '${v.date!.month.toString().padLeft(2, '0')}-${v.date!.day.toString().padLeft(2, '0')}',
+          if (v.period != null) v.period!,
+        ].join(' ');
         _toast('已填入：${_fmtNum(v.sys)}'
             '${v.dia != null ? '/${_fmtNum(v.dia!)}' : ''}'
-            '${v.hr != null ? ' · 心率 ${_fmtNum(v.hr!)}' : ''}');
+            '${v.hr != null ? ' · 心率 ${_fmtNum(v.hr!)}' : ''}'
+            '${when.isNotEmpty ? ' · $when' : ''}');
       }
     } catch (e) {
       _toast('语音识别失败：$e');
@@ -1003,7 +1047,8 @@ class _SpeechVitalsButtonState extends ConsumerState<_SpeechVitalsButton> {
       onPressed: _toggle,
       icon: Icon(_recording ? Icons.stop_circle_outlined : Icons.mic_none,
           size: 20),
-      label: Text(_recording ? '正在录音…说完点击结束' : '语音录入（说：高压140 低压90 心率80）'),
+      label: Text(
+          _recording ? '正在录音…说完点击结束' : '语音录入（说：昨天早上 高压140 低压90 心率80）'),
     );
   }
 }

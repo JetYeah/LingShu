@@ -45,4 +45,51 @@ void main() {
     expect(parseVitalsFromSpeech(''), isNull);
     expect(parseVitalsFromSpeech('血压有点高'), isNull);
   });
+
+  test('日期与时段一并解析', () {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    // 「10月3号」的期望年份与实现同规则：未说年份且指向未来按去年理解
+    DateTime oct3() {
+      var d = DateTime(now.year, 10, 3);
+      if (d.isAfter(today)) d = DateTime(now.year - 1, 10, 3);
+      return d;
+    }
+
+    final v = parseVitalsFromSpeech('昨天早上 高压140 低压90 心率80')!;
+    final yst = today.subtract(const Duration(days: 1));
+    expect(v.date, yst);
+    expect(v.period, '早上');
+    expect(v.sys, 140);
+    expect(v.dia, 90);
+    expect(v.hr, 80);
+
+    final v2 = parseVitalsFromSpeech('10月3号晚上 血压130 85')!;
+    expect(v2.date, oct3());
+    expect(v2.period, '晚上');
+    expect(v2.sys, 130);
+    expect(v2.dia, 85);
+
+    final v3 = parseVitalsFromSpeech('十月三号 早晨 高压一百三')!;
+    expect(v3.date, oct3());
+    expect(v3.period, '早上');
+    expect(v3.sys, 130);
+
+    final v4 = parseVitalsFromSpeech('前天中午 140 90')!;
+    final qqt = today.subtract(const Duration(days: 2));
+    expect(v4.date, qqt);
+    expect(v4.period, '中午');
+
+    // 日期里的数字不能混进数值序列
+    final v5 = parseVitalsFromSpeech('10月3号 140 90 80')!;
+    expect(v5.date, oct3());
+    expect(v5.sys, 140);
+    expect(v5.dia, 90);
+    expect(v5.hr, 80);
+
+    // 没说日期时段时不误报
+    final v6 = parseVitalsFromSpeech('高压140 低压90')!;
+    expect(v6.date, isNull);
+    expect(v6.period, isNull);
+  });
 }

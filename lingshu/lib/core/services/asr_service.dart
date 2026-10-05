@@ -46,16 +46,37 @@ class SpeechVitals {
   final double sys; // 高压（收缩压）
   final double? dia; // 低压（舒张压）
   final double? hr; // 心率
-  SpeechVitals({required this.sys, this.dia, this.hr});
+  final DateTime? date; // 「今天/昨天/前天」「10月3号」等口述日期
+  final String? period; // 测量时段：早上/中午/晚上
+  SpeechVitals(
+      {required this.sys, this.dia, this.hr, this.date, this.period});
 }
 
-/// 从语音转写文本中解析 高压/低压/心率。
+/// 从语音转写文本中解析 高压/低压/心率（可选附带日期与早/中/晚时段）。
 /// 支持两种说法：
-/// - 带关键词：「高压一百四，低压九十，心率八十」「收缩压140 舒张压90 脉搏80」
+/// - 带关键词：「昨天早上 高压一百四，低压九十，心率八十」「收缩压140 舒张压90 脉搏80」
 /// - 纯报数（按习惯顺序）：「140 90 80」→ 高压/低压/心率；「140 90」→ 高压/低压
 SpeechVitals? parseVitalsFromSpeech(String raw) {
   // 中文数字归一为阿拉伯，便于统一提取（一百四 → 140）
-  final text = _normalizeZhNumbers(raw);
+  var text = _normalizeZhNumbers(raw);
+
+  // 日期先提取并从文本中移除：避免「10月3号」的 10、3 混进纯报数的数值序列
+  final date = _parseSpokenDate(text);
+  text = text
+      .replaceAll(RegExp(r'\d{2,4}年\d{1,2}月\d{1,2}[日号]'), ' ')
+      .replaceAll(RegExp(r'\d{1,2}月\d{1,2}[日号]'), ' ')
+      .replaceAll(RegExp('今天|昨天|前天'), ' ');
+
+  // 测量时段：早/中/晚的口语说法归并为三档
+  String? period;
+  if (RegExp('早上|早晨|清晨|上午|早饭').hasMatch(text)) {
+    period = '早上';
+  } else if (RegExp('中午|午间|午后|午饭').hasMatch(text)) {
+    period = '中午';
+  } else if (RegExp('晚上|今晚|傍晚|夜间|夜里|晚饭').hasMatch(text)) {
+    period = '晚上';
+  }
+
   const zh = '零一二两三四五六七八九十百';
   final num = '([0-9]+(?:\\.[0-9]+)?|[$zh]+)';
   const sep = '[\\s，,、。．:：的是为有约个当前后度之／/\\.\\-]*';
@@ -89,17 +110,50 @@ SpeechVitals? parseVitalsFromSpeech(String raw) {
       d ??= rest.isNotEmpty ? rest.removeAt(0) : null;
       h ??= rest.isNotEmpty ? rest.first : null;
     }
-    return SpeechVitals(sys: sys, dia: d, hr: h);
+    return SpeechVitals(sys: sys, dia: d, hr: h, date: date, period: period);
   }
 
   // 无关键词：按报数顺序取前三个数
   if (all.length >= 3) {
-    return SpeechVitals(sys: all[0], dia: all[1], hr: all[2]);
+    return SpeechVitals(
+        sys: all[0], dia: all[1], hr: all[2], date: date, period: period);
   }
   if (all.length == 2) {
-    return SpeechVitals(sys: all[0], dia: all[1]);
+    return SpeechVitals(sys: all[0], dia: all[1], date: date, period: period);
   }
   return null;
+}
+
+/// 口述日期 → DateTime（只到日）。支持：今天/昨天/前天、（yyyy年）M月D日/号。
+/// 无日期返回 null；月份口误超界也返回 null（由用户手填兜底）。
+DateTime? _parseSpokenDate(String text) {
+  final now = DateTime.now();
+  final today = DateTime(now.year, now.month, now.day);
+  if (text.contains('前天')) return today.subtract(const Duration(days: 2));
+  if (text.contains('昨天')) return today.subtract(const Duration(days: 1));
+  if (text.contains('今天')) return today;
+  final full = RegExp(r'(\d{2,4})年(\d{1,2})月(\d{1,2})[日号]').firstMatch(text);
+  final md = RegExp(r'(\d{1,2})月(\d{1,2})[日号]').firstMatch(text);
+  int y, m, d;
+  if (full != null) {
+    y = int.parse(full.group(1)!);
+    if (y < 100) y += 2000;
+    m = int.parse(full.group(2)!);
+    d = int.parse(full.group(3)!);
+  } else if (md != null) {
+    y = now.year;
+    m = int.parse(md.group(1)!);
+    d = int.parse(md.group(2)!);
+  } else {
+    return null;
+  }
+  final parsed = DateTime(y, m, d);
+  if (parsed.month != m || parsed.day != d) return null; // 口误（13月/32号）
+  // 未说年份却指向未来（如 1 月说「12月30号」）→ 理解为去年
+  if (full == null && parsed.isAfter(today)) {
+    return DateTime(y - 1, m, d);
+  }
+  return parsed;
 }
 
 double? _toNum(String? s) {
