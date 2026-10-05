@@ -1,4 +1,5 @@
 import 'package:drift/drift.dart' show Value;
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -29,6 +30,16 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
   final _pin2 = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   bool _saving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // 模拟器/真机 debug 联调：预填表单，免去手工建档（仅 debug 构建）
+    if (kDebugMode) {
+      _name.text = '联调测试';
+      _pin1.text = _pin2.text = '1357';
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
