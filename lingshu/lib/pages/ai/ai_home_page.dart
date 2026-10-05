@@ -266,7 +266,7 @@ class _AiHomePageState extends ConsumerState<AiHomePage>
           const SizedBox(height: 6),
           Text('传病历照片自动归档 · 说句话查指标趋势 · 养生问答',
               style: TextStyle(
-                  fontSize: 11.5, color: _paper.withValues(alpha: 0.55))),
+                  fontSize: 11.5, color: _paper.withValues(alpha: 0.68))),
           const SizedBox(height: 26),
           Wrap(
             alignment: WrapAlignment.center,
@@ -279,10 +279,13 @@ class _AiHomePageState extends ConsumerState<AiHomePage>
                 ('🌿', '晚上睡不着怎么办'),
               ])
                 ActionChip(
-                  backgroundColor: Colors.white.withValues(alpha: 0.08),
-                  side: BorderSide(color: Colors.white.withValues(alpha: 0.18)),
-                  label:
-                      Text('$emoji $text', style: const TextStyle(fontSize: 11.5, color: _paper)),
+                  backgroundColor: Colors.white.withValues(alpha: 0.13),
+                  side: BorderSide(color: Colors.white.withValues(alpha: 0.28)),
+                  label: Text('$emoji $text',
+                      style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.white)),
                   onPressed: () => _input.text = text,
                 ),
             ],
@@ -456,7 +459,7 @@ class _AiHomePageState extends ConsumerState<AiHomePage>
                   isDense: true,
                   hintText: '传病历照片归档 / 查指标 / 提问…',
                   hintStyle: TextStyle(
-                      color: _paper.withValues(alpha: 0.4), fontSize: 13.5),
+                      color: _paper.withValues(alpha: 0.62), fontSize: 13.5),
                 ),
                 onSubmitted: (_) => _send(),
               ),
