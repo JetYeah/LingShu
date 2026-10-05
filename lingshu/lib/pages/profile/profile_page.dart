@@ -79,6 +79,8 @@ class ProfilePage extends ConsumerWidget {
               ]),
           ),
           const SizedBox(height: 16),
+          _aiEntry(context),
+          const SizedBox(height: 12),
           if (profiles.length > 1)
             SizedBox(
               height: 42,
@@ -140,6 +142,48 @@ class ProfilePage extends ConsumerWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  /// AI 原生入口（体验版）：玄色卡面呼应 AI 页的北斗星野
+  Widget _aiEntry(BuildContext context) {
+    return Card(
+      clipBehavior: Clip.antiAlias,
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: LingShuColors.gold.withValues(alpha: 0.4)),
+      ),
+      color: LingShuColors.stageTop,
+      child: InkWell(
+        onTap: () => context.push('/ai'),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          child: Row(children: [
+            const Icon(Icons.auto_awesome,
+                color: LingShuColors.gold, size: 22),
+            const SizedBox(width: 12),
+            const Expanded(
+              child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('AI 健康管家 · 体验版',
+                        style: TextStyle(
+                            color: LingShuColors.paper,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 15,
+                            fontFamily: 'SerifSC')),
+                    SizedBox(height: 2),
+                    Text('一句话归档病历 · 查指标趋势 · 养生问答',
+                        style: TextStyle(
+                            color: Color(0x99F8F4EB), fontSize: 11)),
+                  ]),
+            ),
+            Icon(Icons.chevron_right,
+                size: 18, color: LingShuColors.paper.withValues(alpha: 0.6)),
+          ]),
+        ),
       ),
     );
   }

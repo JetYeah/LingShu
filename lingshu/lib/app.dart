@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 
 import 'core/theme.dart';
 import 'pages/acupoint/acupoint_page.dart';
+import 'pages/ai/ai_home_page.dart';
 import 'pages/firstaid/firstaid_detail_page.dart';
 import 'pages/firstaid/firstaid_page.dart';
 import 'pages/home_shell.dart';
@@ -71,6 +72,8 @@ GoRouter buildRouter(WidgetRef ref) {
         path: '/records/import',
         builder: (c, s) => const RecordImportPage(),
       ),
+      // AI 原生入口（体验版）：独立开发中，暂不作为默认首页
+      GoRoute(path: '/ai', builder: (c, s) => const AiHomePage()),
       GoRoute(
         path: '/records/:id',
         builder: (c, s) =>

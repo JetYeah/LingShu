@@ -22,10 +22,10 @@
 | 急救 | `/firstaid` | `pages/firstaid/firstaid_page.dart` | 火 |
 | 我的 | `/profile` | `pages/profile/profile_page.dart` | 金 |
 
-- **二级路由**：`/onboarding`、`/lock`、`/records/import`（拍照导入）、`/records/:id`（档案详情）、`/metrics/:id`（指标趋势图）、`/family` 与 `/family/edit?id=&first=1`（成员档案）、`/medications` 与 `/medications/edit?id=`（用药）、`/settings`、`/backup`（备份恢复）、`/constitution`（体质辨识）、`/box`（家庭药箱）、`/firstaid/:id`（急救场景）。
+- **二级路由**：`/onboarding`、`/lock`、`/records/import`（拍照导入）、`/records/:id`（档案详情）、`/metrics/:id`（指标趋势图）、`/family` 与 `/family/edit?id=&first=1`（成员档案）、`/medications` 与 `/medications/edit?id=`（用药）、`/settings`、`/backup`（备份恢复）、`/constitution`（体质辨识）、`/box`（家庭药箱）、`/firstaid/:id`（急救场景）、`/ai`（AI 原生入口·体验版，由「我的」页进入）。
 - **注意**：中药图鉴三个页面（`pages/herb/`）**不在 go_router 中注册**，由铜人页等处 `Navigator.push` 直跳。
 
-## lib/ 目录职责（共 48 个 .dart 文件）
+## lib/ 目录职责（共 51 个 .dart 文件）
 
 ```
 lib/
@@ -48,10 +48,12 @@ lib/
 │       ├── location_service.dart     geolocator/geocoding 定位与附近地点建议
 │       ├── notification_service.dart 用药提醒 + 药箱到期（6/3/1 月前+过期后每日）
 │       ├── asr_service.dart          语音转写（OpenAI 兼容 /audio/transcriptions）+ 口述血压/心率解析
+│       ├── agent_service.dart        AI 管家：意图路由 + 无头病历归档 + 指标问询 + 趋势图离屏渲染（Canvas→PNG）
 │       ├── ocr_service.dart          视觉大模型 OCR（OpenAI 兼容 /chat/completions），OcrResult/OcrMetric/MetricMergeGroup 指标合并
 │       └── weather_service.dart      Open-Meteo 免 Key 天气（节气卡片用）
-└── pages/                 页面层（7 子模块 + 3 顶层壳）
+└── pages/                 页面层（8 子模块 + 3 顶层壳）
     ├── home_shell.dart / lock_page.dart / onboarding_page.dart
+    ├── ai/         AI 原生入口（体验版）：ai_home_page（北斗星野会话+语音呼吸球）+ beidou_background（呼吸星野画笔）
     ├── acupoint/   首页铜人：acupoint_page(814 行) + body3d(619 行，纯 Flutter 软件渲染 3D：V3/BodyPart/Mannequin 球+胶囊建模、自定义光照) + body_chart(464 行，2D 挂图)
     ├── records/    档案库：records_page / records_calendar / record_import_page（拍照/文件+AI 识别）/ record_detail_page
     ├── metrics/    指标：metrics_page / metric_chart_page（fl_chart 趋势+参考区间带）
@@ -141,7 +143,7 @@ lib/
 
 ## 测试与质量
 
-- `test/widget_test.dart`：冒烟测试（ContentRepo 可实例化）；`test/herb_pack_downloader_test.dart`：配图包下载器；`test/vitals_speech_parser_test.dart`：口述血压/心率解析。改动核心逻辑时建议手动回归（参考 `screenshots/` 里的功能清单）。
+- `test/widget_test.dart`：冒烟测试（ContentRepo 可实例化）；`test/herb_pack_downloader_test.dart`：配图包下载器；`test/vitals_speech_parser_test.dart`：口述血压/心率解析；`test/agent_chart_test.dart`：AI 管家趋势图离屏渲染。改动核心逻辑时建议手动回归（参考 `screenshots/` 里的功能清单）。
 - `analysis_options.yaml`：flutter_lints 6，exclude `build/** android/** ios/**`。提交前跑 `flutter analyze`。
 - 调试记录惯例：历史上用 `.setup/`（ar*.json、smoke*.png、append_v*.json）+ flowus_cli 做版本走查留痕，属工作区级习惯而非本工程内流程。
 
