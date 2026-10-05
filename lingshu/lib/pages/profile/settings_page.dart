@@ -115,8 +115,9 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
           const Text('语音识别模型（OpenAI 兼容接口）',
               style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
           const SizedBox(height: 4),
-          Text('血压·心率记录页的语音输入使用此模型（/audio/transcriptions）。\n'
-              '各项留空则复用上方 AI 识别的 Base URL 与 API Key。',
+          Text('语音输入（血压·心率口述 / AI 管家呼吸球）使用此模型（/audio/transcriptions）。\n'
+              '免费推荐：硅基流动 FunAudioLLM/SenseVoiceSmall——注册 cloud.siliconflow.cn 取 Key 即用，不花钱。\n'
+              '各项留空则复用上方 AI 识别的 Base URL 与 API Key（注意：智谱 glm-asr 按 0.06 元/分钟计费，无免费额度）。',
               style: Theme.of(context)
                   .textTheme
                   .bodySmall
@@ -126,7 +127,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             controller: _asrBaseUrl,
             decoration: const InputDecoration(
                 labelText: 'Base URL（选填）',
-                hintText: '留空同 AI 识别，如 https://open.bigmodel.cn/api/paas/v4'),
+                hintText: '硅基流动填 https://api.siliconflow.cn/v1'),
           ),
           const SizedBox(height: 10),
           TextField(
@@ -139,7 +140,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
           TextField(
             controller: _asrModel,
             decoration: const InputDecoration(
-                labelText: '模型（选填）', hintText: 'glm-asr'),
+                labelText: '模型（选填）',
+                hintText: 'FunAudioLLM/SenseVoiceSmall（免费）或 glm-asr'),
           ),
           const SizedBox(height: 10),
           FilledButton(onPressed: _saveASR, child: const Text('保存语音识别配置')),
