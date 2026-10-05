@@ -10,15 +10,16 @@ class BeidouBackground extends StatelessWidget {
   final double t; // 动画相位
   const BeidouBackground({super.key, required this.t});
 
-  // 北斗七星斗形（天枢 天璇 天玑 天权 玉衡 开阳 摇光），归一化坐标
+  // 北斗七星斗形（斗在右、柄在左）：
+  // 天枢-天璇-天玑-天权 围成斗（梯形），玉衡-开阳-摇光 为柄，柄尖下垂
   static const _dipper = [
-    (0.13, 0.34), // 天枢
-    (0.27, 0.40), // 天璇
-    (0.40, 0.35), // 天玑
-    (0.50, 0.24), // 天权
-    (0.62, 0.30), // 玉衡
-    (0.76, 0.24), // 开阳
-    (0.90, 0.14), // 摇光
+    (0.60, 0.10), // 天枢（斗口右上）
+    (0.65, 0.30), // 天璇（斗底右）
+    (0.47, 0.34), // 天玑（斗底左）
+    (0.42, 0.15), // 天权（斗口左上）
+    (0.28, 0.12), // 玉衡（柄一）
+    (0.15, 0.16), // 开阳（柄二）
+    (0.00, 0.27), // 摇光（柄尖）
   ];
 
   // 固定种子的小星（避免每帧随机跳动）
@@ -59,16 +60,16 @@ class _BeidouPainter extends CustomPainter {
           Offset(x * size.width, y * size.height), 0.8 + ph * 1.1, twinkle);
     }
 
-    // 北斗主星：位置随视口缩放，斗形占上部约 45% 宽
+    // 北斗主星：位置随视口缩放，斗形占上部约一半宽
     final pts = [
       for (final (nx, ny) in BeidouBackground._dipper)
         Offset(
-          size.width * (0.04 + nx * 0.62),
-          size.height * (0.06 + ny * 0.5),
+          size.width * (0.05 + nx * 0.75),
+          size.height * (0.06 + ny * 0.55),
         ),
     ];
 
-    // 星间连线（斗口三边 + 柄），随呼吸微亮
+    // 星间连线：柄（权-衡-阳-光）+ 斗的三条边（枢璇、璇玑、玑权）+ 斗口封边（权枢）
     final breathe = 0.5 + 0.5 * math.sin(t * 2 * math.pi);
     final linePaint = Paint()
       ..color = LingShuColors.goldSoft.withValues(alpha: 0.16 + 0.14 * breathe)
@@ -77,6 +78,7 @@ class _BeidouPainter extends CustomPainter {
     for (var i = 0; i < pts.length - 1; i++) {
       canvas.drawLine(pts[i], pts[i + 1], linePaint);
     }
+    canvas.drawLine(pts[3], pts[0], linePaint); // 合斗口：天权—天枢
 
     // 主星：金色光晕呼吸 + 星体，各星相位依次错开，如斗转
     for (var i = 0; i < pts.length; i++) {

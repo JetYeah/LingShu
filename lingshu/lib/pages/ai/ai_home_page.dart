@@ -279,12 +279,12 @@ class _AiHomePageState extends ConsumerState<AiHomePage>
                 ('🌿', '晚上睡不着怎么办'),
               ])
                 ActionChip(
-                  backgroundColor: Colors.white.withValues(alpha: 0.13),
-                  side: BorderSide(color: Colors.white.withValues(alpha: 0.28)),
+                  backgroundColor: Colors.white.withValues(alpha: 0.16),
+                  side: BorderSide(color: Colors.white.withValues(alpha: 0.32)),
                   label: Text('$emoji $text',
                       style: const TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w600,
                           color: Colors.white)),
                   onPressed: () => _input.text = text,
                 ),
@@ -481,48 +481,64 @@ class _AiHomePageState extends ConsumerState<AiHomePage>
     );
   }
 
-  /// 呼吸球：金色光晕随 4 秒相位胀缩；录音时转为朱砂色、节奏加快
+  /// 呼吸球：金色光晕随 4 秒相位胀缩；录音时转为朱砂色。
+  /// 外框固定尺寸、内部用 Transform.scale 缩放——不占布局，
+  /// 输入框和文字不会跟着上下晃
   Widget _orbButton() {
-    return AnimatedBuilder(
-      animation: _breathe,
-      builder: (_, _) {
-        final breathe =
-            0.5 + 0.5 * math.sin(_breathe.value * 2 * math.pi);
-        final scale = _recording ? 1.0 + 0.10 * breathe : 1.0 + 0.07 * breathe;
-        final color = _recording ? WuXing.fire : _gold;
-        return GestureDetector(
-          onTap: _toggleMic,
-          child: Container(
-            margin: const EdgeInsets.only(top: 14),
-            width: 84 * scale,
-            height: 84 * scale,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: RadialGradient(colors: [
-                color.withValues(alpha: 0.95),
-                color.withValues(alpha: 0.55),
-              ]),
-              boxShadow: [
-                BoxShadow(
-                  color: color.withValues(alpha: 0.35 + 0.35 * breathe),
-                  blurRadius: 26 + 18 * breathe,
-                  spreadRadius: 2 + 4 * breathe,
+    return Padding(
+      padding: const EdgeInsets.only(top: 14),
+      child: SizedBox(
+        width: 104,
+        height: 96, // 84 × 最大 1.10 缩放 ≈ 92.4，留足余量
+        child: AnimatedBuilder(
+          animation: _breathe,
+          builder: (_, _) {
+            final breathe =
+                0.5 + 0.5 * math.sin(_breathe.value * 2 * math.pi);
+            final scale =
+                _recording ? 1.0 + 0.10 * breathe : 1.0 + 0.07 * breathe;
+            final color = _recording ? WuXing.fire : _gold;
+            return Center(
+              child: Transform.scale(
+                scale: scale,
+                child: GestureDetector(
+                  onTap: _toggleMic,
+                  child: Container(
+                    width: 84,
+                    height: 84,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: RadialGradient(colors: [
+                        color.withValues(alpha: 0.95),
+                        color.withValues(alpha: 0.55),
+                      ]),
+                      boxShadow: [
+                        BoxShadow(
+                          color: color.withValues(alpha: 0.35 + 0.35 * breathe),
+                          blurRadius: 26 + 18 * breathe,
+                          spreadRadius: 2 + 4 * breathe,
+                        ),
+                      ],
+                    ),
+                    child: Center(
+                      child: _asrBusy
+                          ? const SizedBox(
+                              width: 24,
+                              height: 24,
+                              child: CircularProgressIndicator(
+                                  strokeWidth: 2, color: Colors.white))
+                          : Icon(
+                              _recording ? Icons.stop_rounded : Icons.mic_none,
+                              size: 32,
+                              color: Colors.white),
+                    ),
+                  ),
                 ),
-              ],
-            ),
-            child: Center(
-              child: _asrBusy
-                  ? const SizedBox(
-                      width: 24,
-                      height: 24,
-                      child: CircularProgressIndicator(
-                          strokeWidth: 2, color: Colors.white))
-                  : Icon(_recording ? Icons.stop_rounded : Icons.mic_none,
-                      size: 32, color: Colors.white),
-            ),
-          ),
-        );
-      },
+              ),
+            );
+          },
+        ),
+      ),
     );
   }
 }
