@@ -9,7 +9,6 @@ import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:record/record.dart';
 
-import '../../core/logo.dart';
 import '../../core/services/agent_service.dart';
 import '../../core/theme.dart';
 import '../../providers.dart';
@@ -244,24 +243,14 @@ class _AiHomePageState extends ConsumerState<AiHomePage>
         ]),
       );
 
-  /// 空闲态：星野中央的品牌区 + 示例提示
+  /// 空闲态：北斗绕「北天极」（原 Logo 位置，星野层绘制）流转，
+  /// 中轴留白 + 标语；快捷功能贴在输入框上方（见 _inputArea）
   Widget _idleView() {
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Container(
-            padding: const EdgeInsets.all(4),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(20),
-              boxShadow: [
-                BoxShadow(
-                    color: _gold.withValues(alpha: 0.35), blurRadius: 30),
-              ],
-            ),
-            child: const LingShuLogo(size: 72, showBackground: false),
-          ),
-          const SizedBox(height: 18),
+          const SizedBox(height: 150), // 让出北天极旋转区（背景层绘制北斗）
           const Text('一句话，我替你打理健康档案',
               style: TextStyle(
                   fontSize: 17,
@@ -272,39 +261,6 @@ class _AiHomePageState extends ConsumerState<AiHomePage>
           Text('传病历照片自动归档 · 说句话查指标趋势 · 养生问答',
               style: TextStyle(
                   fontSize: 11.5, color: _paper.withValues(alpha: 0.68))),
-          const SizedBox(height: 26),
-          Wrap(
-            alignment: WrapAlignment.center,
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              for (final (emoji, text) in const [
-                ('📊', '看看最近7天的血糖'),
-                ('🗂', '帮我把这张病历归档'),
-                ('🌿', '晚上睡不着怎么办'),
-              ])
-                // 自绘胶囊而非 ActionChip：应用主题会把 chip 背景强制成
-                // 不透明 surface（白色），白字落在白底上会隐形（真机踩坑）
-                GestureDetector(
-                  onTap: () => _input.text = text,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 14, vertical: 9),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.14),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                          color: Colors.white.withValues(alpha: 0.30)),
-                    ),
-                    child: Text('$emoji $text',
-                        style: const TextStyle(
-                            fontSize: 12.5,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white)),
-                  ),
-                ),
-            ],
-          ),
         ],
       ),
     );
@@ -413,6 +369,45 @@ class _AiHomePageState extends ConsumerState<AiHomePage>
     return Padding(
       padding: const EdgeInsets.fromLTRB(14, 4, 14, 0),
       child: Column(children: [
+        // 快捷功能：贴在输入框上方（仅空闲无会话时显示）
+        if (_msgs.isEmpty)
+          SizedBox(
+            height: 38,
+            child: ListView(
+              scrollDirection: Axis.horizontal,
+              children: [
+                for (final (emoji, text) in const [
+                  ('📊', '看看最近7天的血糖'),
+                  ('🗂', '帮我把这张病历归档'),
+                  ('🌿', '晚上睡不着怎么办'),
+                ])
+                  Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    // 自绘胶囊而非 ActionChip：应用主题会把 chip 背景强制成
+                    // 不透明 surface（白色），白字落在白底上会隐形（真机踩坑）
+                    child: GestureDetector(
+                      onTap: () => _input.text = text,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 14, vertical: 9),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.14),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                              color:
+                                  Colors.white.withValues(alpha: 0.30)),
+                        ),
+                        child: Text('$emoji $text',
+                            style: const TextStyle(
+                                fontSize: 12.5,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.white)),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
         if (_attached.isNotEmpty)
           SizedBox(
             height: 64,

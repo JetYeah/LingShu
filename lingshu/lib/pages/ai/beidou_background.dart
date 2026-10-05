@@ -7,10 +7,11 @@ import '../../core/theme.dart';
 
 /// 北斗七星 · 呼吸星野背景（真实天文版）。
 ///
-/// 七星按真实 J2000 坐标 + 当地恒星时绕天极旋转：随季节/时刻转动，
+/// 七星按真实 J2000 坐标 + 当地恒星时绕北天极旋转：随季节/时刻转动，
 /// 斗柄指向暗合《鹗冠子》四时口诀（春东/夏南/秋西/冬北，晚 8-9 点）。
-/// 每颗星有独立的呼吸周期与相位（3~7 秒，正弦明暗），如随机眨眼；
-/// [t] 为动画相位（秒），星位置每分钟重算一次即可跟上真实天空。
+/// 北天极位于原 Logo 位置（页面中轴偏上），北斗绕它流转。
+/// 闪烁：每约 3 秒一轮，任一时刻至多 2 颗星处于闪烁中——平常白色，
+/// 闪烁时渐变为亮黄再回到白色。
 class BeidouBackground extends StatelessWidget {
   final double t; // 动画秒数（驱动闪烁相位）
   final DateTime? now; // 观测时刻（默认当前；可注入测试/演示时刻）
@@ -22,16 +23,19 @@ class BeidouBackground extends StatelessWidget {
     return (r.nextDouble(), r.nextDouble() * 0.92, r.nextDouble());
   });
 
-  /// 七星呼吸参数：固定种子的随机周期(3~7s)与相位(0~2π)——每颗星
-  /// 按自己的节奏明灭，如呼吸互不同步
-  static final List<({double period, double phase})> _breath =
-      List.generate(7, (i) {
-    final r = math.Random(i * 991 + 7);
-    return (
-      period: 3.0 + r.nextDouble() * 4.0,
-      phase: r.nextDouble() * 2 * math.pi,
-    );
-  });
+  /// 闪烁编排：每颗星每 3 秒闪一次（白→亮黄→白，窗 0.8s），
+  /// 起始时刻确定性错开——7 颗在 3s 内均匀占位（间隔 3/7≈0.43s），
+  /// 窗 0.8s 下相邻两星最多重叠，任一时刻同时闪烁 ≤ 2 颗。
+  static final List<double> _blinkStart = List.generate(7, (i) => i * 3.0 / 7);
+
+  /// 星 i 在时刻 t 的闪烁强度 0..1（1=最亮黄）。周期 3s，闪烁窗 0.8s。
+  static double _blinkGlow(int i, double t) {
+    const cycle = 3.0, win = 0.8;
+    final u = ((t - _blinkStart[i]) % cycle + cycle) % cycle;
+    if (u > win) return 0; // 静默期：纯白
+    // 白→黄→白：正弦半波
+    return 0.5 - 0.5 * math.cos(u / win * 2 * math.pi);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -67,13 +71,12 @@ class _BeidouPainter extends CustomPainter {
           Paint()..color = Colors.white.withValues(alpha: a));
     }
 
-    // 北斗主星：天极在画面上部 (宽/2, 高×0.11)；轨道半径取
-    // min(宽, 高×0.10)×0.92，摇光最远点停在 Logo 区（约 26% 高）之前；
-    // 星体本身画大（基础 5px + 呼吸增幅），远观也醒目
-    final radius = math.min(size.width, size.height * 0.10) * 0.92;
+    // 北斗主星：北天极 = 原 Logo 位置（中轴、高 34%）——北斗绕它流转，
+    // 轨道半径 = 宽×0.42，横向近乎满屏
+    final radius = size.width * 0.42;
     final pts = BeidouAstronomy.starPositionsPx(now,
         cx: size.width / 2,
-        cy: size.height * 0.11,
+        cy: size.height * 0.34,
         radiusPx: radius,
       ).map((s) => Offset(s.x, s.y)).toList();
 
@@ -87,18 +90,16 @@ class _BeidouPainter extends CustomPainter {
       canvas.drawLine(pts[i], pts[i + 1], linePaint);
     }
 
-    // 主星：白↔亮黄呼吸——平常白色，闪烁时渐变为亮黄再回到白色；
-    // 每颗星独立周期(3~7s)与相位，如各自眨眼
+    // 主星：闪烁编排驱动——任一时刻 ≤2 颗，白→亮黄→白（1.4s 完成一次），
+    // 静默期纯白微光
     const starWhite = Color(0xFFF2EFE6);
     const starGold = Color(0xFFFFD873);
     for (var i = 0; i < pts.length; i++) {
-      final breath = BeidouBackground._breath[i];
-      final wave = math.sin((t / breath.period) * 2 * math.pi + breath.phase);
-      final glow = 0.5 + 0.5 * wave; // 0..1 呼吸深度
+      final glow = BeidouBackground._blinkGlow(i, t); // 0..1
       final c = pts[i];
-      // 颜色：白 → 亮黄 → 白
+      // 颜色：白 → 亮黄 → 白；星体小巧
       final color = Color.lerp(starWhite, starGold, glow)!;
-      final radius = 4.2 + 2.6 * glow;
+      final radius = 2.1 + 1.3 * glow;
 
       // 光晕（同色系，随呼吸胀缩）
       canvas.drawCircle(
