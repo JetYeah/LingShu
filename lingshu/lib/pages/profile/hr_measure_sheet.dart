@@ -1,17 +1,13 @@
 import 'dart:async';
 
-import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../core/db.dart';
 import '../../core/theme.dart';
-import '../../providers.dart';
 
-/// 心率自测：15/30/60 秒倒计时数脉搏 → 输入计数 → 自动换算次/分
-Future<void> showHrMeasureSheet(
-    BuildContext context, WidgetRef ref, Metric metric) {
+/// 心率自测：15/30/60 秒倒计时数脉搏 → 输入计数 → 自动换算次/分。
+/// 返回 (bpm, 计数备注)；由调用方决定落库还是回填输入框。
+Future<(int, String)?> showHrMeasureSheet(BuildContext context) {
   int duration = 15; // 档位（秒）
   int remain = 0;
   bool counting = false;
@@ -19,7 +15,7 @@ Future<void> showHrMeasureSheet(
   Timer? ticker;
   final beats = TextEditingController();
 
-  return showModalBottomSheet(
+  return showModalBottomSheet<(int, String)>(
     context: context,
     isScrollControlled: true,
     backgroundColor: Colors.white,
@@ -104,7 +100,7 @@ Future<void> showHrMeasureSheet(
           ],
           if (finished) ...[
             Text('倒计时结束',
-                style: TextStyle(
+                style: const TextStyle(
                     fontSize: 12.5, color: WuXing.fire, letterSpacing: 2)),
             const SizedBox(height: 10),
             Text('数到了多少次脉搏？',
@@ -138,28 +134,20 @@ Future<void> showHrMeasureSheet(
               return Text(
                 bpm == null ? '' : '≈ $bpm 次/分',
                 style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                    color: abnormal ? WuXing.fire : WuXing.wood),
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: abnormal ? WuXing.fire : WuXing.wood),
               );
             }),
             const SizedBox(height: 12),
             SizedBox(
               width: double.infinity,
               child: FilledButton(
-                onPressed: () async {
+                onPressed: () {
                   final n = int.tryParse(beats.text);
                   if (n == null || n <= 0) return;
                   final bpm = (n * 60 / duration).round();
-                  final db = ref.read(dbProvider);
-                  await db.into(db.metricValues).insert(
-                      MetricValuesCompanion.insert(
-                        metricId: metric.id,
-                        value1: bpm.toDouble(),
-                        measuredAt: DateTime.now(),
-                        note: Value('$duration 秒计数 $n 次'),
-                      ));
-                  if (c.mounted) Navigator.pop(c);
+                  Navigator.pop(c, (bpm, '$duration 秒计数 $n 次'));
                 },
                 child: const Padding(
                   padding: EdgeInsets.symmetric(vertical: 10),

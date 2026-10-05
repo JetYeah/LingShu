@@ -25,7 +25,7 @@
 - **二级路由**：`/onboarding`、`/lock`、`/records/import`（拍照导入）、`/records/:id`（档案详情）、`/metrics/:id`（指标趋势图）、`/family` 与 `/family/edit?id=&first=1`（成员档案）、`/medications` 与 `/medications/edit?id=`（用药）、`/settings`、`/backup`（备份恢复）、`/constitution`（体质辨识）、`/box`（家庭药箱）、`/firstaid/:id`（急救场景）。
 - **注意**：中药图鉴三个页面（`pages/herb/`）**不在 go_router 中注册**，由铜人页等处 `Navigator.push` 直跳。
 
-## lib/ 目录职责（共 44 个 .dart 文件）
+## lib/ 目录职责（共 48 个 .dart 文件）
 
 ```
 lib/
@@ -47,6 +47,7 @@ lib/
 │       ├── herb_repo.dart            HerbRepo：879 味中药（assets/data/herbs.json）+ CollectedHerbs 收藏
 │       ├── location_service.dart     geolocator/geocoding 定位与附近地点建议
 │       ├── notification_service.dart 用药提醒 + 药箱到期（6/3/1 月前+过期后每日）
+│       ├── asr_service.dart          语音转写（OpenAI 兼容 /audio/transcriptions）+ 口述血压/心率解析
 │       ├── ocr_service.dart          视觉大模型 OCR（OpenAI 兼容 /chat/completions），OcrResult/OcrMetric/MetricMergeGroup 指标合并
 │       └── weather_service.dart      Open-Meteo 免 Key 天气（节气卡片用）
 └── pages/                 页面层（7 子模块 + 3 顶层壳）
@@ -72,6 +73,7 @@ lib/
 | `recordsProvider` / `metricsProvider` / `medicationsProvider` | StreamProvider | 按成员 watch 的列表 |
 | `contentProvider` | Provider\<ContentRepo\> | 静态中医内容 |
 | `aiConfigProvider` | FutureProvider\<OcrService\> | 读 prefs `ai.base_url`/`ai.api_key`/`ai.model` |
+| `asrConfigProvider` | FutureProvider\<AsrService\> | 语音识别配置，prefs `asr.*` 留空逐项回退 `ai.*` |
 | `collectedHerbsProvider` + `collectedVersionProvider` | Provider + StateProvider | 图鉴收藏（bump version 触发刷新） |
 | `allHerbsProvider` | FutureProvider\<List\<Herb\>\> | 879 味全局缓存 |
 
@@ -139,7 +141,7 @@ lib/
 
 ## 测试与质量
 
-- `test/widget_test.dart`：仅 1 个冒烟测试（ContentRepo 可实例化）。**测试覆盖几乎为零，改动核心逻辑时建议手动回归**（参考 `screenshots/` 里的功能清单）。
+- `test/widget_test.dart`：冒烟测试（ContentRepo 可实例化）；`test/herb_pack_downloader_test.dart`：配图包下载器；`test/vitals_speech_parser_test.dart`：口述血压/心率解析。改动核心逻辑时建议手动回归（参考 `screenshots/` 里的功能清单）。
 - `analysis_options.yaml`：flutter_lints 6，exclude `build/** android/** ios/**`。提交前跑 `flutter analyze`。
 - 调试记录惯例：历史上用 `.setup/`（ar*.json、smoke*.png、append_v*.json）+ flowus_cli 做版本走查留痕，属工作区级习惯而非本工程内流程。
 

@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:drift/drift.dart' hide Column;
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
@@ -5,12 +7,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:record/record.dart';
 
 import '../../core/db.dart';
+import '../../core/services/asr_service.dart';
 import '../../core/services/ocr_service.dart';
 import '../../core/theme.dart';
 import '../../core/ui.dart';
 import '../../providers.dart';
+import '../profile/hr_measure_sheet.dart';
 
 /// AI 合并建议：sources 的名称与 target 指向同一检查项，
 /// 确认后记录并入 target、删多余条目，必要时统一命名
@@ -652,11 +658,12 @@ class _MetricCard extends ConsumerWidget {
       s.map((e) => e.y).reduce((a, b) => a > b ? a : b) * 1.02;
 }
 
-/// 指标录入对话框
+/// 指标录入对话框（双值指标即血压：附带可选心率，与血压同一时刻入表）
 Future<void> showMetricEntry(
     BuildContext context, WidgetRef ref, Metric metric) async {
   final v1 = TextEditingController();
   final v2 = TextEditingController();
+  final hr = TextEditingController(); // 仅双值（血压）指标显示
   final note = TextEditingController();
   var date = DateTime.now();
   var timeLabel =
@@ -705,6 +712,36 @@ Future<void> showMetricEntry(
               ),
             ],
           ]),
+          if (metric.dualValue) ...[
+            const SizedBox(height: 12),
+            TextField(
+              controller: hr,
+              keyboardType: TextInputType.number,
+              inputFormatters: [
+                FilteringTextInputFormatter.digitsOnly,
+                LengthLimitingTextInputFormatter(3),
+              ],
+              decoration: InputDecoration(
+                labelText: '心率（选填，次/分）',
+                suffixIcon: IconButton(
+                  tooltip: '数脉搏自测换算',
+                  icon: const Icon(Icons.timer_outlined, size: 20),
+                  onPressed: () async {
+                    final r = await showHrMeasureSheet(c);
+                    if (r != null) setSheet(() => hr.text = '${r.$1}');
+                  },
+                ),
+              ),
+            ),
+            const SizedBox(height: 10),
+            _SpeechVitalsButton(onFilled: (sys, dia, hrV) {
+              setSheet(() {
+                v1.text = _fmtNum(sys);
+                if (dia != null) v2.text = _fmtNum(dia);
+                if (hrV != null) hr.text = _fmtNum(hrV);
+              });
+            }),
+          ],
           const SizedBox(height: 12),
           InkWell(
             onTap: () async {
@@ -758,10 +795,13 @@ Future<void> showMetricEntry(
             child: FilledButton(
               onPressed: () {
                 final val = double.tryParse(v1.text);
-                if (val == null) return;
+                final hrVal =
+                    metric.dualValue ? double.tryParse(hr.text) : null;
+                // 血压或心率至少填一项即可保存（只测心率时血压可留空）
+                if (val == null && hrVal == null) return;
                 Navigator.pop(c, true);
-                _save(metric, val, double.tryParse(v2.text), date, note.text,
-                    ref,
+                _saveEntry(metric, val, double.tryParse(v2.text), hrVal, date,
+                    note.text, ref,
                     timeLabel: timeLabel);
               },
               child: const Text('保存'),
@@ -772,6 +812,43 @@ Future<void> showMetricEntry(
     ),
   );
   if (ok == true) {}
+}
+
+String _fmtNum(double v) => v == v.roundToDouble() ? '${v.round()}' : '$v';
+
+/// 取「心率」指标（按名称匹配，兼容旧数据），没有则创建——
+/// 血压对话框里顺带记的心率与自测心率共用同一条趋势
+Future<Metric> _ensureHrMetric(AppDatabase db, int profileId) async {
+  final hit = await (db.select(db.metrics)
+        ..where((t) => t.profileId.equals(profileId) & t.name.equals('心率')))
+      .get();
+  if (hit.isNotEmpty) return hit.first;
+  return db.into(db.metrics).insertReturning(MetricsCompanion.insert(
+        profileId: profileId,
+        code: 'heart_rate',
+        name: '心率',
+        unit: '次/分',
+        tag: const Value('基础体征'),
+        refLow: const Value(60),
+        refHigh: const Value(100),
+      ));
+}
+
+/// 录入落库：血压（可留空）+ 心率（可留空），两者同一时刻
+Future<void> _saveEntry(Metric metric, double? v1, double? v2, double? hrVal,
+    DateTime date, String note, WidgetRef ref,
+    {String? timeLabel}) async {
+  if (v1 != null) {
+    await _save(metric, v1, v2, date, note, ref, timeLabel: timeLabel);
+  }
+  if (hrVal != null) {
+    final db = ref.read(dbProvider);
+    final profileId = ref.read(currentProfileIdProvider);
+    if (profileId == null) return;
+    final hrMetric = await _ensureHrMetric(db, profileId);
+    await _save(hrMetric, hrVal, null, date,
+        note.isEmpty ? (v1 != null ? '与血压同测' : '') : note, ref);
+  }
 }
 
 Future<void> _save(Metric metric, double v1, double? v2, DateTime date,
@@ -819,4 +896,114 @@ String _defaultTimeLabel(DateTime now) {
   if (h < 19) return '晚餐前';
   if (h < 22) return '晚餐后';
   return '睡前';
+}
+
+/// 语音录入按钮：点按开始录音，说完再点按结束 → 转写 → 解析回填高压/低压/心率。
+/// 例句「高压一百四，低压九十，心率八十」或直接报数「140 90 80」
+class _SpeechVitalsButton extends ConsumerStatefulWidget {
+  final void Function(double sys, double? dia, double? hr) onFilled;
+  const _SpeechVitalsButton({required this.onFilled});
+
+  @override
+  ConsumerState<_SpeechVitalsButton> createState() =>
+      _SpeechVitalsButtonState();
+}
+
+class _SpeechVitalsButtonState extends ConsumerState<_SpeechVitalsButton> {
+  final _recorder = AudioRecorder();
+  bool _recording = false;
+  bool _busy = false; // 停止后的转写/解析阶段
+
+  @override
+  void dispose() {
+    // 对话框中途关闭时丢弃未停止的录音
+    _recorder.dispose();
+    super.dispose();
+  }
+
+  void _toast(String msg) {
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(msg), width: 340));
+  }
+
+  Future<void> _toggle() async {
+    if (_busy) return;
+    if (!_recording) {
+      try {
+        if (!await _recorder.hasPermission()) {
+          _toast('未获得麦克风权限，无法语音录入');
+          return;
+        }
+        final dir = await getTemporaryDirectory();
+        await _recorder.start(
+          const RecordConfig(
+              encoder: AudioEncoder.wav, numChannels: 1, sampleRate: 16000),
+          path: '${dir.path}${Platform.pathSeparator}ls_speech.wav',
+        );
+        setState(() => _recording = true);
+      } catch (e) {
+        _toast('无法开始录音：$e');
+      }
+      return;
+    }
+    setState(() {
+      _recording = false;
+      _busy = true;
+    });
+    try {
+      final path = await _recorder.stop();
+      final asr = await ref.read(asrConfigProvider.future);
+      if (asr.apiKey.isEmpty) {
+        _toast('未配置语音识别：请到「我的 → 设置」填写 API Key（可复用 AI 识别的 Key）');
+        return;
+      }
+      if (path == null) {
+        _toast('录音失败，请重试');
+        return;
+      }
+      final bytes = await File(path).readAsBytes();
+      if (bytes.length < 2000) {
+        _toast('录音太短，请说完再点结束');
+        return;
+      }
+      final text = await asr.transcribe(bytes);
+      final v = parseVitalsFromSpeech(text);
+      if (v == null) {
+        _toast('听到「$text」，未解析出数值，请手动填写');
+      } else {
+        widget.onFilled(v.sys, v.dia, v.hr);
+        _toast('已填入：${_fmtNum(v.sys)}'
+            '${v.dia != null ? '/${_fmtNum(v.dia!)}' : ''}'
+            '${v.hr != null ? ' · 心率 ${_fmtNum(v.hr!)}' : ''}');
+      }
+    } catch (e) {
+      _toast('语音识别失败：$e');
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_busy) {
+      return OutlinedButton.icon(
+        onPressed: null,
+        icon: const SizedBox(
+            width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)),
+        label: const Text('识别中…'),
+      );
+    }
+    return OutlinedButton.icon(
+      style: OutlinedButton.styleFrom(
+        foregroundColor: _recording ? WuXing.fire : WuXing.wood,
+        side: BorderSide(
+            color:
+                _recording ? WuXing.fire : WuXing.wood.withValues(alpha: 0.45)),
+      ),
+      onPressed: _toggle,
+      icon: Icon(_recording ? Icons.stop_circle_outlined : Icons.mic_none,
+          size: 20),
+      label: Text(_recording ? '正在录音…说完点击结束' : '语音录入（说：高压140 低压90 心率80）'),
+    );
+  }
 }

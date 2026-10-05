@@ -18,6 +18,9 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   late final TextEditingController _baseUrl;
   late final TextEditingController _apiKey;
   late final TextEditingController _model;
+  late final TextEditingController _asrBaseUrl;
+  late final TextEditingController _asrApiKey;
+  late final TextEditingController _asrModel;
   bool _biometric = false;
   bool _canBiometric = false;
 
@@ -30,6 +33,12 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     _apiKey = TextEditingController(text: prefs.getString('ai.api_key') ?? '');
     _model =
         TextEditingController(text: prefs.getString('ai.model') ?? '');
+    _asrBaseUrl =
+        TextEditingController(text: prefs.getString('asr.base_url') ?? '');
+    _asrApiKey =
+        TextEditingController(text: prefs.getString('asr.api_key') ?? '');
+    _asrModel =
+        TextEditingController(text: prefs.getString('asr.model') ?? '');
     _biometric = ref.read(authProvider).biometricEnabled;
     LocalAuthentication().canCheckBiometrics.then((v) {
       if (mounted) setState(() => _canBiometric = v);
@@ -50,6 +59,19 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     if (mounted) {
       ScaffoldMessenger.of(context)
           .showSnackBar(const SnackBar(content: Text('AI 配置已保存')));
+    }
+  }
+
+  Future<void> _saveASR() async {
+    final prefs = ref.read(sharedPreferencesProvider);
+    // 留空即「回退到 AI 识别配置」，存空串
+    await prefs.setString('asr.base_url', _asrBaseUrl.text.trim());
+    await prefs.setString('asr.api_key', _asrApiKey.text.trim());
+    await prefs.setString('asr.model', _asrModel.text.trim());
+    ref.invalidate(asrConfigProvider);
+    if (mounted) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('语音识别配置已保存')));
     }
   }
 
@@ -89,6 +111,38 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
           ),
           const SizedBox(height: 10),
           FilledButton(onPressed: _saveAI, child: const Text('保存 AI 配置')),
+          const SizedBox(height: 24),
+          const Text('语音识别模型（OpenAI 兼容接口）',
+              style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+          const SizedBox(height: 4),
+          Text('血压·心率记录页的语音输入使用此模型（/audio/transcriptions）。\n'
+              '各项留空则复用上方 AI 识别的 Base URL 与 API Key。',
+              style: Theme.of(context)
+                  .textTheme
+                  .bodySmall
+                  ?.copyWith(color: LingShuColors.inkSoft)),
+          const SizedBox(height: 10),
+          TextField(
+            controller: _asrBaseUrl,
+            decoration: const InputDecoration(
+                labelText: 'Base URL（选填）',
+                hintText: '留空同 AI 识别，如 https://open.bigmodel.cn/api/paas/v4'),
+          ),
+          const SizedBox(height: 10),
+          TextField(
+            controller: _asrApiKey,
+            obscureText: true,
+            decoration: const InputDecoration(
+                labelText: 'API Key（选填）', hintText: '留空同 AI 识别'),
+          ),
+          const SizedBox(height: 10),
+          TextField(
+            controller: _asrModel,
+            decoration: const InputDecoration(
+                labelText: '模型（选填）', hintText: 'glm-asr'),
+          ),
+          const SizedBox(height: 10),
+          FilledButton(onPressed: _saveASR, child: const Text('保存语音识别配置')),
           const SizedBox(height: 24),
           const Text('安全',
               style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),

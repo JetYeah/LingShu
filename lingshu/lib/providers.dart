@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'core/db.dart';
 import 'core/services/herb_repo.dart';
+import 'core/services/asr_service.dart';
 import 'core/services/auth_service.dart';
 import 'core/services/content_loader.dart';
 import 'core/services/location_service.dart';
@@ -34,6 +35,27 @@ final aiConfigProvider = FutureProvider<OcrService>((ref) async {
   final model = prefs.getString('ai.model') ?? OcrService.defaultModel;
   return OcrService(baseUrl: base, apiKey: key, model: model);
 });
+
+/// 语音识别配置：asr.* 留空时逐项回退到 AI 识别的配置（同一服务商时只配一次 Key）
+final asrConfigProvider = FutureProvider<AsrService>((ref) async {
+  final prefs = ref.watch(sharedPreferencesProvider);
+  final base = _firstNonEmpty(
+      prefs.getString('asr.base_url'), prefs.getString('ai.base_url'));
+  final key = _firstNonEmpty(
+      prefs.getString('asr.api_key'), prefs.getString('ai.api_key'));
+  final model = _firstNonEmpty(
+      prefs.getString('asr.model'), AsrService.defaultModel);
+  return AsrService(
+      baseUrl: base ?? OcrService.defaultBaseUrl,
+      apiKey: key ?? '',
+      model: model!);
+});
+
+String? _firstNonEmpty(String? a, String? b) {
+  if (a != null && a.trim().isNotEmpty) return a.trim();
+  if (b != null && b.trim().isNotEmpty) return b.trim();
+  return null;
+}
 
 /// 会话状态
 enum SessionState { loading, needOnboarding, locked, ready }

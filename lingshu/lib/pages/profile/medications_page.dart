@@ -11,7 +11,6 @@ import '../../core/theme.dart';
 import '../../core/ui.dart';
 import '../../providers.dart';
 import '../metrics/metrics_page.dart' show showMetricEntry;
-import 'hr_measure_sheet.dart';
 
 /// 用药提醒主页
 class MedicationsPage extends ConsumerStatefulWidget {
@@ -101,13 +100,6 @@ class _MedicationsPageState extends ConsumerState<MedicationsPage> {
     ));
   }
 
-  /// 心率自测：15/30/60 秒倒计时数脉搏，自动换算次/分
-  Future<void> _measureHr() async {
-    final metric = await _ensureMetric('心率', '次/分', refLow: 60, refHigh: 100);
-    if (metric == null || !mounted) return;
-    await showHrMeasureSheet(context, ref, metric);
-  }
-
   @override
   Widget build(BuildContext context) {
     final meds = ref.watch(medicationsProvider).valueOrNull ?? const [];
@@ -177,7 +169,7 @@ class _MedicationsPageState extends ConsumerState<MedicationsPage> {
                     fontSize: 10.5, color: LingShuColors.inkSoft)),
           ]),
           const SizedBox(height: 4),
-          Text('在家量的数据随手记，进入健康追踪趋势图；与医院检验报告分开管理',
+          Text('血压与心率一次录入，可语音口述自动填写；数据进入健康追踪趋势图，与医院检验报告分开管理',
               style: TextStyle(
                   fontSize: 11, height: 1.4, color: LingShuColors.inkSoft)),
           const SizedBox(height: 10),
@@ -187,7 +179,7 @@ class _MedicationsPageState extends ConsumerState<MedicationsPage> {
             children: [
               ActionChip(
                 avatar: const Icon(Icons.favorite_border, size: 15),
-                label: const Text('血压'),
+                label: const Text('血压 · 心率'),
                 onPressed: () =>
                     _quickRecord('血压', 'mmHg', dual: true, code: 'blood_pressure'),
               ),
@@ -200,11 +192,6 @@ class _MedicationsPageState extends ConsumerState<MedicationsPage> {
                 avatar: const Icon(Icons.monitor_weight_outlined, size: 15),
                 label: const Text('体重'),
                 onPressed: () => _quickRecord('体重', 'kg'),
-              ),
-              ActionChip(
-                avatar: const Icon(Icons.timer_outlined, size: 15),
-                label: const Text('心率'),
-                onPressed: _measureHr,
               ),
             ],
           ),
