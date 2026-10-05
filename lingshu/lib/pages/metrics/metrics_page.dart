@@ -666,10 +666,11 @@ Future<void> showMetricEntry(
   final hr = TextEditingController(); // 仅双值（血压）指标显示
   final note = TextEditingController();
   var date = DateTime.now();
+  final isSugar = metric.code == 'blood_sugar' || metric.name.contains('血糖');
   // 测量时点：血糖为空腹/餐后档位；血压为早/中/晚时段（语音可填）；其余指标无
   var timeLabel = metric.dualValue
       ? _defaultPeriod(DateTime.now())
-      : (metric.code == 'blood_sugar' || metric.name.contains('血糖'))
+      : isSugar
           ? _defaultTimeLabel(DateTime.now())
           : null;
   const labels = ['空腹', '早餐后', '午餐前', '午餐后', '晚餐前', '晚餐后', '睡前', '随机'];
@@ -736,15 +737,32 @@ Future<void> showMetricEntry(
               ),
             ),
             const SizedBox(height: 10),
-            _SpeechVitalsButton(onFilled: (v) {
-              setSheet(() {
-                v1.text = _fmtNum(v.sys);
-                if (v.dia != null) v2.text = _fmtNum(v.dia!);
-                if (v.hr != null) hr.text = _fmtNum(v.hr!);
-                if (v.date != null) date = v.date!;
-                if (v.period != null) timeLabel = v.period;
-              });
-            }),
+            _SpeechVitalsButton(
+              example: '昨天早上 高压140 低压90 心率80',
+              onFilled: (v) {
+                setSheet(() {
+                  v1.text = _fmtNum(v.sys);
+                  if (v.dia != null) v2.text = _fmtNum(v.dia!);
+                  if (v.hr != null) hr.text = _fmtNum(v.hr!);
+                  if (v.date != null) date = v.date!;
+                  if (v.period != null) timeLabel = v.period;
+                });
+              },
+            ),
+          ],
+          if (isSugar) ...[
+            const SizedBox(height: 10),
+            _SpeechVitalsButton(
+              preferSugar: true,
+              example: '昨天早餐后 血糖6.8',
+              onFilled: (v) {
+                setSheet(() {
+                  v1.text = _fmtNum(v.sys);
+                  if (v.date != null) date = v.date!;
+                  if (v.period != null) timeLabel = v.period;
+                });
+              },
+            ),
           ],
           const SizedBox(height: 12),
           InkWell(
@@ -790,7 +808,7 @@ Future<void> showMetricEntry(
           const SizedBox(height: 12),
           // 测量时点仅对血糖类指标有意义（空腹/餐后对照参考区间），
           // 血压/体重等显示"晚餐前"只会造成困惑
-          if (metric.code == 'blood_sugar' || metric.name.contains('血糖'))
+          if (isSugar)
             SizedBox(
               height: 38,
               child: ListView(
@@ -935,12 +953,18 @@ String _defaultTimeLabel(DateTime now) {
   return '睡前';
 }
 
-/// 语音录入按钮：点按开始录音，说完再点按结束 → 转写 → 解析回填高压/低压/心率，
-/// 连带日期（今天/昨天/10月3号）与时段（早/中/晚）一起填。
-/// 例句「昨天早上 高压140 低压90 心率80」或直接报数「140 90 80」
+/// 语音录入按钮：点按开始录音，说完再点按结束 → 转写 → 解析回填。
+/// 血压：高压/低压/心率 + 日期（今天/昨天/10月3号）+ 早/中/晚；
+/// 血糖（preferSugar）：血糖值（支持「六点八」小数口述）+ 空腹/餐后时点 + 日期。
 class _SpeechVitalsButton extends ConsumerStatefulWidget {
   final void Function(SpeechVitals v) onFilled;
-  const _SpeechVitalsButton({required this.onFilled});
+  final bool preferSugar; // 血糖对话框：按血糖解析
+  final String example; // 按钮上印的示例句
+  const _SpeechVitalsButton({
+    required this.onFilled,
+    this.preferSugar = false,
+    this.example = '高压140 低压90 心率80',
+  });
 
   @override
   ConsumerState<_SpeechVitalsButton> createState() =>
@@ -1005,7 +1029,7 @@ class _SpeechVitalsButtonState extends ConsumerState<_SpeechVitalsButton> {
         return;
       }
       final text = await asr.transcribe(bytes);
-      final v = parseVitalsFromSpeech(text);
+      final v = parseVitalsFromSpeech(text, preferSugar: widget.preferSugar);
       if (v == null) {
         _toast('听到「$text」，未解析出数值，请手动填写');
       } else {
@@ -1047,8 +1071,7 @@ class _SpeechVitalsButtonState extends ConsumerState<_SpeechVitalsButton> {
       onPressed: _toggle,
       icon: Icon(_recording ? Icons.stop_circle_outlined : Icons.mic_none,
           size: 20),
-      label: Text(
-          _recording ? '正在录音…说完点击结束' : '语音录入（说：昨天早上 高压140 低压90 心率80）'),
+      label: Text(_recording ? '正在录音…说完点击结束' : '语音录入（说：${widget.example}）'),
     );
   }
 }

@@ -52,11 +52,12 @@ class SpeechVitals {
       {required this.sys, this.dia, this.hr, this.date, this.period});
 }
 
-/// 从语音转写文本中解析 高压/低压/心率（可选附带日期与早/中/晚时段）。
+/// 从语音转写文本中解析 高压/低压/心率（可选附带日期与早/中/晚时段），
+/// 血糖口述（preferSugar 或明说「血糖/空腹」）则解析为 血糖值 + 空腹/餐后时点。
 /// 支持两种说法：
 /// - 带关键词：「昨天早上 高压一百四，低压九十，心率八十」「收缩压140 舒张压90 脉搏80」
 /// - 纯报数（按习惯顺序）：「140 90 80」→ 高压/低压/心率；「140 90」→ 高压/低压
-SpeechVitals? parseVitalsFromSpeech(String raw) {
+SpeechVitals? parseVitalsFromSpeech(String raw, {bool preferSugar = false}) {
   // 中文数字归一为阿拉伯，便于统一提取（一百四 → 140）
   var text = _normalizeZhNumbers(raw);
 
@@ -66,6 +67,19 @@ SpeechVitals? parseVitalsFromSpeech(String raw) {
       .replaceAll(RegExp(r'\d{2,4}年\d{1,2}月\d{1,2}[日号]'), ' ')
       .replaceAll(RegExp(r'\d{1,2}月\d{1,2}[日号]'), ' ')
       .replaceAll(RegExp('今天|昨天|前天'), ' ');
+
+  // 血糖路径：对话框就是血糖（preferSugar），或口述里明说了血糖/空腹且没提血压系词
+  // （「血糖5.8 血压130 85」这类混合句仍按血压归位）
+  final hasBpWords =
+      RegExp('血压|高压|低压|收缩|舒张|心率|脉搏|脉率|心跳').hasMatch(text);
+  if (preferSugar || ((text.contains('血糖') || text.contains('空腹')) && !hasBpWords)) {
+    final val = _sugarValue(text);
+    if (val != null && val > 0) {
+      return SpeechVitals(
+          sys: val, date: date, period: _sugarLabel(text));
+    }
+    // 数值都没解析出来则继续走血压路径兜底
+  }
 
   // 测量时段：早/中/晚的口语说法归并为三档
   String? period;
@@ -121,6 +135,46 @@ SpeechVitals? parseVitalsFromSpeech(String raw) {
   if (all.length == 2) {
     return SpeechVitals(sys: all[0], dia: all[1], date: date, period: period);
   }
+  return null;
+}
+
+/// 口述血糖值：优先取「血糖/葡萄糖」后面的数；否则剥掉时点词后取
+/// 唯一（或唯一落在 1~35 合理区间的）数值。「六点八」的「点」转小数点。
+double? _sugarValue(String raw) {
+  final t =
+      raw.replaceAllMapped(RegExp(r'(\d)点(\d)'), (m) => '${m[1]}.${m[2]}');
+  const zh = '零一二两三四五六七八九十百';
+  final num = '([0-9]+(?:\\.[0-9]+)?|[$zh]+)';
+  const sep = '[\\s，,、。．:：的是为有约个当前后度之／/\\.\\-]*';
+  final kw = RegExp('(?:血糖|葡萄糖)$sep$num').firstMatch(t);
+  final kwVal = _toNum(kw?.group(1));
+  if (kwVal != null && kwVal > 0) return kwVal;
+  final cleaned = t.replaceAll(
+      RegExp('空腹|早餐后|早饭后|早餐前|早饭前|午餐前|午饭前|午餐后|午饭后|'
+          '晚餐前|晚饭前|晚餐后|晚饭后|睡前|餐前|餐后|血糖|葡萄糖'),
+      ' ');
+  final nums = RegExp(num)
+      .allMatches(cleaned)
+      .map((m) => _toNum(m.group(1)))
+      .whereType<double>()
+      .where((n) => n > 0)
+      .toList();
+  if (nums.length == 1) return nums.first;
+  final plausible = nums.where((n) => n >= 1 && n <= 35).toList();
+  if (plausible.length == 1) return plausible.first;
+  return nums.isEmpty ? null : nums.first;
+}
+
+/// 口述血糖时点 → 规范标签（与血糖录入的时点选项一致）；没说返回 null
+String? _sugarLabel(String text) {
+  if (text.contains('空腹')) return '空腹';
+  if (text.contains('早餐后') || text.contains('早饭后')) return '早餐后';
+  if (text.contains('早餐前') || text.contains('早饭前')) return '早餐前';
+  if (text.contains('午餐前') || text.contains('午饭前')) return '午餐前';
+  if (text.contains('午餐后') || text.contains('午饭后')) return '午餐后';
+  if (text.contains('晚餐前') || text.contains('晚饭前')) return '晚餐前';
+  if (text.contains('晚餐后') || text.contains('晚饭后')) return '晚餐后';
+  if (text.contains('睡前')) return '睡前';
   return null;
 }
 

@@ -46,6 +46,47 @@ void main() {
     expect(parseVitalsFromSpeech('血压有点高'), isNull);
   });
 
+  test('血糖口述：数值 + 空腹/餐后时点 + 日期', () {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    DateTime oct3() {
+      var d = DateTime(now.year, 10, 3);
+      if (d.isAfter(today)) d = DateTime(now.year - 1, 10, 3);
+      return d;
+    }
+
+    final s1 = parseVitalsFromSpeech('空腹血糖6.8', preferSugar: true)!;
+    expect(s1.sys, 6.8);
+    expect(s1.period, '空腹');
+
+    // 「六点八」的小数口述
+    final s2 = parseVitalsFromSpeech('血糖六点八', preferSugar: true)!;
+    expect(s2.sys, 6.8);
+
+    final s3 = parseVitalsFromSpeech('昨天早餐后 9.2', preferSugar: true)!;
+    final yst = today.subtract(const Duration(days: 1));
+    expect(s3.sys, 9.2);
+    expect(s3.period, '早餐后');
+    expect(s3.date, yst);
+
+    // 「晚饭后」映射到「晚餐后」；日期含数字不混入取值
+    final s4 = parseVitalsFromSpeech('10月3号晚饭后血糖7.4', preferSugar: true)!;
+    expect(s4.date, oct3());
+    expect(s4.period, '晚餐后');
+    expect(s4.sys, 7.4);
+
+    // 明说血糖（即使不在血糖对话框）也走血糖解析
+    final s5 = parseVitalsFromSpeech('空腹血糖5.9')!;
+    expect(s5.sys, 5.9);
+    expect(s5.period, '空腹');
+
+    // 混合句「血糖…血压…」仍按血压归位（血糖数值作为前置无关数字跳过）
+    final v = parseVitalsFromSpeech('血糖5.8 血压130 85')!;
+    expect(v.sys, 130);
+    expect(v.dia, 85);
+    expect(v.period, isNull);
+  });
+
   test('日期与时段一并解析', () {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
