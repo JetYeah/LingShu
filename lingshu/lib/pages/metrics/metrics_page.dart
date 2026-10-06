@@ -12,6 +12,7 @@ import 'package:record/record.dart';
 
 import '../../core/db.dart';
 import '../../core/services/asr_service.dart';
+import '../../core/services/content_loader.dart';
 import '../../core/services/ocr_service.dart';
 import '../../core/theme.dart';
 import '../../core/ui.dart';
@@ -47,6 +48,7 @@ class _MetricsPageState extends ConsumerState<MetricsPage> {
   bool _classifying = false;
   String? _classifyMsg;
   String? _tagFilter; // null = 全部分类；'⭐' = 仅看关注的指标
+  bool _seedChecked = false; // 空档案播种预设指标：每个档案只查一次
 
   static const _followedFilter = '⭐';
 
@@ -56,6 +58,20 @@ class _MetricsPageState extends ConsumerState<MetricsPage> {
     '感染免疫', '骨骼关节', '消化', '呼吸', '泌尿生殖', '肿瘤标志物',
     '维生素与代谢', '其他',
   ];
+
+  /// 补种预设指标（与建档初始化同一套 presets，BMI 由身高体重推导不入表）。
+  /// 失败静默——档案仍为空，下次进入页面再补。
+  Future<void> _seedPresetMetrics() async {
+    final profileId = ref.read(currentProfileIdProvider);
+    if (profileId == null) return;
+    try {
+      await seedPresetMetricsIfEmpty(
+        ref.read(dbProvider),
+        profileId,
+        ref.read(contentProvider),
+      );
+    } catch (_) {}
+  }
 
   int _tagCompare(String a, String b) {
     final ia = _tagOrder.indexOf(a), ib = _tagOrder.indexOf(b);
@@ -69,7 +85,15 @@ class _MetricsPageState extends ConsumerState<MetricsPage> {
 
   @override
   Widget build(BuildContext context) {
-    final metrics = ref.watch(metricsProvider).valueOrNull ?? const <Metric>[];
+    final metricsAsync = ref.watch(metricsProvider);
+    final metrics = metricsAsync.valueOrNull ?? const <Metric>[];
+    // 档案下一个指标都没有（成员档案/老版本建档不播预设）→
+    // 自动补种全套预设，健康追踪开箱即用；有任意指标则不补，
+    // 尊重用户删除预设的自由
+    if (!_seedChecked && metricsAsync.hasValue && metrics.isEmpty) {
+      _seedChecked = true;
+      _seedPresetMetrics();
+    }
     // 「⭐」筛选：只看关注的指标
     final followedOnly = _tagFilter == _followedFilter;
     final shown = followedOnly
@@ -646,6 +670,35 @@ class _MetricCard extends ConsumerWidget {
       s.map((e) => e.y).reduce((a, b) => a < b ? a : b) * 0.98;
   double _maxY(List<FlSpot> s) =>
       s.map((e) => e.y).reduce((a, b) => a > b ? a : b) * 1.02;
+}
+
+/// 空档案补种预设指标（成员档案/老版本建档没有 onboarding 播种）：
+/// 档案下已有任意指标则不动（尊重用户删除预设的自由），返回播种条数。
+/// BMI 不入表（由身高体重推导）；指标带 presets.json 的参考限。
+Future<int> seedPresetMetricsIfEmpty(
+    AppDatabase db, int profileId, ContentRepo content) async {
+  final existing = await (db.select(db.metrics)
+        ..where((m) => m.profileId.equals(profileId)))
+      .get();
+  if (existing.isNotEmpty) return 0;
+  await content.load();
+  var seeded = 0;
+  for (final p in content.presets) {
+    if (p.code == 'bmi') continue;
+    await db.into(db.metrics).insert(MetricsCompanion.insert(
+          profileId: profileId,
+          code: p.code,
+          name: p.name,
+          unit: p.unit,
+          dualValue: Value(p.dualValue),
+          refLow: Value(p.refLow),
+          refHigh: Value(p.refHigh),
+          refLow2: Value(p.refLow2),
+          refHigh2: Value(p.refHigh2),
+        ));
+    seeded++;
+  }
+  return seeded;
 }
 
 /// 指标录入对话框（双值指标即血压：附带可选心率与早/中/晚时段，同一时刻入表）

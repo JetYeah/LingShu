@@ -157,7 +157,7 @@ class BoxMedicines extends Table {
   BoxMedicines,
 ])
 class AppDatabase extends _$AppDatabase {
-  AppDatabase() : super(_open());
+  AppDatabase({QueryExecutor? executor}) : super(executor ?? _open());
 
   @override
   int get schemaVersion => 9;
