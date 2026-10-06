@@ -40,6 +40,7 @@ class _MedEditPageState extends ConsumerState<MedEditPage> {
   final List<String> _photos = [];
   bool _aiRunning = false;
   final List<MedDraft> _pending = []; // 多种药：逐种预填核对，保存后进下一种
+  bool _saving = false; // 保存中：禁用按钮防重复提交，也给慢速重排一个可见反馈
 
   // 旧值（餐前/餐中/餐后/空腹/睡前）保留在尾部：历史数据仍在用，删除会导致下拉框回显失败
   static const _mealRelations = [
@@ -144,67 +145,86 @@ class _MedEditPageState extends ConsumerState<MedEditPage> {
   }
 
   Future<void> _save() async {
-    if (_name.text.trim().isEmpty) return;
-    final db = ref.read(dbProvider);
-    final profileId = ref.read(currentProfileIdProvider)!;
-    final notif = ref.read(notificationServiceProvider);
-    final times = _times.map((t) =>
-        '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}').toList();
-    final daysJson = _days.length == 7
-        ? null // 每天
-        : jsonEncode(_days.toList()..sort());
-    final daysSet = _days.toSet();
-    String? pausesJson = _pauses.isEmpty
-        ? null
-        : jsonEncode([
-            for (final pg in _pauses)
-              {'f': _dstr(pg.$1), 't': _dstr(pg.$2)}
-          ]);
-
-    int medId;
-    if (widget.medId == null) {
-      medId = await db.into(db.medications).insert(MedicationsCompanion.insert(
-            profileId: profileId,
-            name: _name.text.trim(),
-            dosage: Value(_dosage.text.trim().isEmpty ? null : _dosage.text.trim()),
-            mealRelation: Value(_mealRelation),
-            timesOfDay: jsonEncode(times),
-            daysOfWeek: Value(daysJson),
-            startDate: Value(_startDate),
-            endDate: Value(_endDate),
-            pausePeriods: Value(pausesJson),
-            stock: Value(double.tryParse(_stock.text)),
-            note: Value(_note.text.trim().isEmpty ? null : _note.text.trim()),
-          ));
-    } else {
-      medId = widget.medId!;
-      await notif.cancelForMedication(medId);
-      await (db.update(db.medications)..where((t) => t.id.equals(medId)))
-          .write(MedicationsCompanion(
-        name: Value(_name.text.trim()),
-        dosage: Value(_dosage.text.trim().isEmpty ? null : _dosage.text.trim()),
-        mealRelation: Value(_mealRelation),
-        timesOfDay: Value(jsonEncode(times)),
-        daysOfWeek: Value(daysJson),
-        startDate: Value(_startDate),
-        endDate: Value(_endDate),
-        pausePeriods: Value(pausesJson),
-        stock: Value(double.tryParse(_stock.text)),
-        note: Value(_note.text.trim().isEmpty ? null : _note.text.trim()),
-      ));
+    // 空名称早退必须有提示——静默 return 在用户看来就是「点了保存没反应、不退回」
+    if (_saving) return;
+    if (_name.text.trim().isEmpty) {
+      _toast('请先填写药物名称');
+      return;
     }
+    setState(() => _saving = true);
+    try {
+      final db = ref.read(dbProvider);
+      final profileId = ref.read(currentProfileIdProvider)!;
+      final notif = ref.read(notificationServiceProvider);
+      final times = _times.map((t) =>
+          '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}').toList();
+      final daysJson = _days.length == 7
+          ? null // 每天
+          : jsonEncode(_days.toList()..sort());
+      final daysSet = _days.toSet();
+      String? pausesJson = _pauses.isEmpty
+          ? null
+          : jsonEncode([
+              for (final pg in _pauses)
+                {'f': _dstr(pg.$1), 't': _dstr(pg.$2)}
+            ]);
 
-    // 窗口式重排：周几 ∩ 服用区间 ∩ 非暂停
-    await notif.rescheduleMedication(
-      medicationId: medId,
-      times: times,
-      days: daysSet,
-      startDate: _startDate,
-      endDate: _endDate,
-      pauses: _pauses,
-      title: '灵枢 · 用药提醒',
-      body: '${_name.text.trim()}${_dosage.text.isNotEmpty ? '（${_dosage.text}）' : ''} · ${_mealRelation}服用',
-    );
+      int medId;
+      if (widget.medId == null) {
+        medId = await db.into(db.medications).insert(MedicationsCompanion.insert(
+              profileId: profileId,
+              name: _name.text.trim(),
+              dosage: Value(_dosage.text.trim().isEmpty ? null : _dosage.text.trim()),
+              mealRelation: Value(_mealRelation),
+              timesOfDay: jsonEncode(times),
+              daysOfWeek: Value(daysJson),
+              startDate: Value(_startDate),
+              endDate: Value(_endDate),
+              pausePeriods: Value(pausesJson),
+              stock: Value(double.tryParse(_stock.text)),
+              note: Value(_note.text.trim().isEmpty ? null : _note.text.trim()),
+            ));
+      } else {
+        medId = widget.medId!;
+        await notif.cancelForMedication(medId);
+        await (db.update(db.medications)..where((t) => t.id.equals(medId)))
+            .write(MedicationsCompanion(
+          name: Value(_name.text.trim()),
+          dosage: Value(_dosage.text.trim().isEmpty ? null : _dosage.text.trim()),
+          mealRelation: Value(_mealRelation),
+          timesOfDay: Value(jsonEncode(times)),
+          daysOfWeek: Value(daysJson),
+          startDate: Value(_startDate),
+          endDate: Value(_endDate),
+          pausePeriods: Value(pausesJson),
+          stock: Value(double.tryParse(_stock.text)),
+          note: Value(_note.text.trim().isEmpty ? null : _note.text.trim()),
+        ));
+      }
+
+      // 窗口式重排：周几 ∩ 服用区间 ∩ 非暂停。
+      // 重排失败绝不能卡住保存——部分 ROM 精确闹钟权限被收回时
+      // zonedSchedule 会抛异常，不接住的话 Navigator.pop 永远到不了，
+      // 页面就停在编辑页（数据其实已落库）。兜底：App 启动/回本页时会
+      // 对全部在用药物整体重排，错过这次也会补上。
+      try {
+        await notif.rescheduleMedication(
+          medicationId: medId,
+          times: times,
+          days: daysSet,
+          startDate: _startDate,
+          endDate: _endDate,
+          pauses: _pauses,
+          title: '灵枢 · 用药提醒',
+          body: '${_name.text.trim()}${_dosage.text.isNotEmpty ? '（${_dosage.text}）' : ''} · ${_mealRelation}服用',
+        );
+      } catch (e) {
+        debugPrint('[med] reschedule failed: $e');
+        _toast('已保存，但提醒重排未完成：$e');
+      }
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
     if (!mounted) return;
     // 处方多药模式：保存当前这种后，预填下一种继续核对
     if (widget.medId == null && _pending.isNotEmpty) {
@@ -434,10 +454,16 @@ class _MedEditPageState extends ConsumerState<MedEditPage> {
         child: Padding(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
           child: FilledButton(
-            onPressed: _save,
-            child: Text(
-                _pending.isNotEmpty ? '保存并核对下一种' : '保 存',
-                style: const TextStyle(letterSpacing: 4)),
+            onPressed: _saving ? null : _save,
+            child: _saving
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2))
+                : Text(
+                    _pending.isNotEmpty ? '保存并核对下一种' : '保 存',
+                    style: const TextStyle(letterSpacing: 4),
+                  ),
           ),
         ),
       ),
