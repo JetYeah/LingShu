@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:lingshu/core/services/beidou_astronomy.dart';
+import 'package:lingshu/pages/ai/beidou_background.dart';
 
 /// 北斗天文位置：以两个独立锚点验证绝对相位与旋转规律。
 /// 锚点 1：NOAA 公式独立计算的 LST（2026-10-06 20:00 北京 ≈ 310.3°~311.6°）
@@ -38,10 +39,33 @@ void main() {
     expect(rightCount, greaterThanOrEqualTo(5), reason: '十月北斗应在天极西侧');
   });
 
-  test('节气盘四正锚：夏至=正南(180°)、冬至=正北(0°)（仰视镜像系）', () {
-    // 由 ang(k)=45+15k：夏至 k=9 → 180；冬至 k=21 → 360→0
-    expect((45 + 9 * 15) % 360, 180);
-    expect((45 + 21 * 15) % 360, 0);
+  test('节气盘四正锚：夏至=正南(0°=顶)、冬至=正北(180°=底)（上南下北式盘）', () {
+    // 由 termSlotAngle(k)=225+15k：夏至 k=9 → 0；冬至 k=21 → 180
+    expect(BeidouBackground.termSlotAngle(9), 0);
+    expect(BeidouBackground.termSlotAngle(21), 180);
+    // 立春落东北象限（寅位，东偏北：左=东、下=北）
+    final lichun = BeidouBackground.termSlotAngle(0);
+    expect(lichun, inInclusiveRange(210, 255));
+  });
+
+  test('斗建对齐：晚 8 点斗柄指向当前节气格（夏至指南、冬至指北、寒露指西）', () {
+    // 恒等式 LST(20:00)=太阳赤经+120° 保证：黄昏前后斗柄尖端
+    // （摇光）始终落在当前节气格 ±8° 内（残差仅为均时差）。
+    final cases = [
+      (DateTime(2026, 6, 21, 20), 9), // 夏至 → 格 0°=顶（南）
+      (DateTime(2026, 12, 22, 20), 21), // 冬至 → 格 180°=底（北）
+      (DateTime(2026, 10, 6, 20), 16), // 寒露 → 格 105°=右（西垂）
+    ];
+    for (final (date, k) in cases) {
+      expect(BeidouBackground.currentTermIndex(date), k,
+          reason: '$date 节气序号应为 $k');
+      final dir = handleDir(date);
+      final slot = BeidouBackground.termSlotAngle(k);
+      final d = (dir - slot).abs();
+      final dist = d > 180 ? 360 - d : d;
+      expect(dist, lessThan(8),
+          reason: '晚 8 点斗柄应指当前节气格（实测 $dir° vs 格 $slot°）');
+    }
   });
 
   test('周年旋转：每天约 1°，方向一致', () {
@@ -76,6 +100,47 @@ void main() {
     final r1 = len(p1, 0, 1) / len(p1, 1, 2);
     final r2 = len(p2, 0, 1) / len(p2, 1, 2);
     expect((r1 - r2).abs(), lessThan(0.02));
+  });
+
+  test('北斗钟时针：dubheAngle 与星图上天枢实际方位一致', () {
+    final t = DateTime(2026, 10, 6, 20);
+    final p = BeidouAstronomy.starPositions(t)[0];
+    final a = math.atan2(p.x - 0.5, -(p.y - 0.30)) * 180 / math.pi;
+    final expected = (a % 360 + 360) % 360;
+    final actual = BeidouAstronomy.dubheAngle(t);
+    final d = (actual - expected).abs();
+    expect(d > 180 ? 360 - d : d, lessThan(0.5),
+        reason: '时针角应与天枢屏幕方位一致（实测 $actual° vs $expected°）');
+  });
+
+  test('北斗钟刻度：整点时刻该小时刻度正指天枢，且 15°/小时均布', () {
+    final t = DateTime(2026, 10, 6, 20);
+    final hand = BeidouAstronomy.dubheAngle(t);
+    final a = BeidouBackground.hourTickAngle(t, 20);
+    final d = (a - hand).abs();
+    expect(d > 180 ? 360 - d : d, lessThan(0.5),
+        reason: '当前小时刻度应在时针线上（实测 $a° vs $hand°）');
+    final c = BeidouBackground.hourTickAngle(t, 21);
+    final step = ((c - a) % 360 + 360) % 360;
+    expect(step, closeTo(15, 0.5), reason: '刻度间隔 15°/小时');
+  });
+
+  test('时辰读数：23-1 子时、1-3 丑时、13-15 未时、19-21 戌时', () {
+    expect(BeidouBackground.shichenOf(DateTime(2026, 10, 6, 20)), '戌时');
+    expect(BeidouBackground.shichenOf(DateTime(2026, 10, 6, 23)), '子时');
+    expect(BeidouBackground.shichenOf(DateTime(2026, 10, 6, 0)), '子时');
+    expect(BeidouBackground.shichenOf(DateTime(2026, 10, 6, 1)), '丑时');
+    expect(BeidouBackground.shichenOf(DateTime(2026, 10, 6, 13)), '未时');
+  });
+
+  test('布局间距：北斗内缘（天枢）与节气环文字外缘留有净空', () {
+    // 复刻 painter 几何常量（720×1600 参考画布）：北斗外扩 1.08、
+    // 节气环 0.50、文字外缘 = 环 + 14 偏移 + 字高
+    const w = 720.0;
+    final dubheR = (90.0 - 61.75) / 41.0 * w * 0.40 * 1.08;
+    final labelOuter = w * 0.40 * 0.50 + 14 + 16;
+    expect(dubheR - labelOuter, greaterThan(8),
+        reason: '北斗内缘与节气环文字不应压叠（净空 ${dubheR - labelOuter}px）');
   });
 
   test('窗口随机闪烁：每 3s 窗口 1~2 颗呼吸、跨窗口选择不同', () {

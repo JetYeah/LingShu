@@ -44,13 +44,18 @@ class BeidouAstronomy {
     for (var i = 0; i < 7; i++) {
       final theta = _wrapDegrees(lst - _ras[i]) * math.pi / 180;
       final r = (90.0 - _decs[i]) / maxPoleDist * radiusPx;
-      // 北天区「仰视朝北」星图方位（星图 App 式）：HA=0 星在天极正上方
-      // （上中天）；HA 增大（向西）星向右侧移动——东升（左）西落（右），
-      // 周日与周年皆顺时针绕极，读时方向与钟表一致。
+      // 北天区星图方位（传统式盘·上南下北镜像系）：HA=0 星在天极正上方
+      // （上中天，天顶一侧即正南）；HA 增大（向西）星向右侧移动——
+      // 东升（左）西落（右），周日与周年皆顺时针绕极，读时方向与钟表一致。
       out.add((x: cx + r * math.sin(theta), y: cy - r * math.cos(theta)));
     }
     return out;
   }
+
+  /// 天枢此刻屏幕角（度，顺时针自正上方）——「北斗钟」时针方向：
+  /// 北极星→天枢虚线随北斗刚体旋转，恒星日 23h56m 转一周（≈15.0411°/时）。
+  static double dubheAngle(DateTime now) =>
+      _wrapDegrees(_localSiderealTime(now) - _ras[0]);
 
   /// 七星归一化坐标（0..1）：天极 (0.5, 0.30)，半径按 720×1600 参考画布
   /// 折算——仅用于测试；UI 请用 [starPositionsPx]。

@@ -9,11 +9,12 @@ import '../../core/theme.dart';
 ///
 /// 三层同心圆构图（圆心 = 原天极/原 Logo 位）：
 ///   ① 中心：北极星（金色星芒，恒定不闪）；
-///   ② 内圈：二十四节气环（每格 15°，斗柄每天扫过约 1°，一格约 15 天；
-///      环整体对齐使斗柄此刻正指当前节气，其余节气随之展开）；
+///   ② 内圈：二十四节气固定盘（罗盘式，每格 15°，不随时钟旋转；
+///      黄昏斗柄指当前节气，其余时刻的偏离量即「时辰」——斗转星移可读时）；
+///      盘内侧附北斗钟 24 小时刻度（北极星→天枢虚线为时针）与当前时辰读数；
 ///   ③ 外圈：北斗七星真实轨道（J2000 坐标 + 当地恒星时，随季节/时刻流转，
 ///      十月晚八点斗柄西垂，与真实星空一致）。
-/// 另在轨道四正位标注 东南西北 方位（上北下南左西右东，朝北观星图式）。
+/// 另在轨道四正位标注 东南西北 方位（上南下北左东右西，传统式盘方位）。
 /// 闪烁：每 3 秒一窗随机选 1~2 颗呼吸（白→亮黄→白）。
 class BeidouBackground extends StatelessWidget {
   final double t; // 动画秒数（驱动闪烁相位）
@@ -34,6 +35,30 @@ class BeidouBackground extends StatelessWidget {
     final k = (((doy - 35) % 365 + 365) % 365) / 15.218;
     return k.floor() % 24;
   }
+
+  /// 节气 k 在固定盘上的屏幕角（度，顺时针自正上方）。
+  /// 四正锚：夏至=正南(0°=顶)、冬至=正北(180°=底)；晚 8 点斗柄即指
+  /// 当前节气格（LST(20:00)=太阳赤经+120° 恒等式保证周年对齐）。
+  static double termSlotAngle(int k) => (225.0 + k * 15.0) % 360.0;
+
+  /// 十二时辰名（子时 23-1 点起，每时辰 2 小时）
+  static const _shichenChars = [
+    '子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥',
+  ];
+
+  /// 当前时辰读数（如「戌时」）：(小时+1)÷2 映射十二时辰。
+  static String shichenOf(DateTime now) =>
+      '${_shichenChars[((now.hour + 1) % 24) ~/ 2]}时';
+
+  /// 北斗钟表盘基准角（0 时刻度的角位置）：随时针（天枢虚线）逐帧重锚，
+  /// 恒星日/太阳日的累计漂移由重锚吸收——当前小时刻度恒在时针线上。
+  static double hourDialBase(DateTime now) =>
+      BeidouAstronomy.dubheAngle(now) -
+      (now.hour + now.minute / 60.0) * 15.0;
+
+  /// 小时 H 的刻度角（度，顺时针自正上方；15°/格均布，随节气周转 1°/天）。
+  static double hourTickAngle(DateTime now, int h) =>
+      (hourDialBase(now) + h * 15.0) % 360.0;
 
   /// 散布小星（固定种子，避免每帧随机跳动）
   static final _stars = List.generate(46, (i) {
@@ -93,18 +118,24 @@ class _BeidouPainter extends CustomPainter {
     // 轨道半径 = 宽×0.40，强化「绕原 Logo 位置旋转」的观感
     final radius = size.width * 0.40;
     final pole = Offset(size.width / 2, size.height * 0.35);
+    // 北斗整体外扩 8%（刚体缩放，七星相对形状不变）：与内圈节气环拉开间距
+    final starOrbit = radius * 1.08;
     final pts = BeidouAstronomy.starPositionsPx(now,
         cx: pole.dx,
         cy: pole.dy,
-        radiusPx: radius,
+        radiusPx: starOrbit,
       ).map((s) => Offset(s.x, s.y)).toList();
 
-    // ── 二十四节气环（内圈，r=轨道×0.56）──
-    // 环整体旋转对齐：第 k(当前节气) 格中心 = 此刻摇光（柄尖）实指方向；
-    // 其余节气 15°/格 展开——斗柄每天扫约 1°，一格≈15 天，即「斗转星移」。
+    // ── 二十四节气固定盘（内圈，r=轨道×0.50）──
+    // 盘不随时钟旋转（斗建固定盘）：晚 8 点斗柄指当前节气格，
+    // 其余节气 15°/格 顺时针展开——斗柄每天扫约 1°，一格≈15 天。
     _paintSolarTermRing(canvas, pole, radius, pts[6]);
 
-    // ── 方位标注（轨道外四正位：上北下南左西右东，朝北观星图式）──
+    // ── 北斗钟：24 小时刻度 + 当前时辰读数（节气盘内侧）──
+    _paintHourDial(canvas, pole, radius);
+    _paintShichen(canvas, pole, radius);
+
+    // ── 方位标注（轨道外四正位：上南下北左东右西，传统式盘方位）──
     _paintCardinalMarks(canvas, pole, radius);
 
     // 星间连线（斗口→柄尖一条折线，随呼吸微亮）
@@ -210,13 +241,13 @@ class _BeidouPainter extends CustomPainter {
     }
   }
 
-  /// 二十四节气环：传统斗建固定盘（罗盘式）。
-  /// 立春钉在寅位（罗盘方位 60°，东偏北），此后每节气固定 15° 逆时针排布
-  /// （斗柄周年视运动方向）。盘不随时钟旋转——黄昏时斗柄大致指着当前
-  /// 节气，其他时刻的偏离量即「时辰」（斗转星移可读时）。
+  /// 二十四节气固定盘：传统斗建罗盘式（上南下北）。
+  /// 四正锚定：夏至=正南(0°=顶)、冬至=正北(180°=底)，从立春起每气顺时针
+  /// +15°。盘不随时钟旋转——晚 8 点斗柄大致指着当前节气格，其他时刻的
+  /// 偏离量即「时辰」（斗转星移可读时）。
   void _paintSolarTermRing(
       Canvas canvas, Offset pole, double radius, Offset tip) {
-    final ringR = radius * 0.56;
+    final ringR = radius * 0.50; // 内移让位：环与北斗轨道间留出时辰刻度带
     final kNow = BeidouBackground.currentTermIndex(now);
 
     // 淡环底圈
@@ -230,9 +261,9 @@ class _BeidouPainter extends CustomPainter {
     );
 
     for (var k = 0; k < 24; k++) {
-      // 固定盘（斗建四正锚）：夏至=正南(180°)、冬至=正北(0°)，
+      // 固定盘（斗建四正锚）：夏至=正南(0°=顶)、冬至=正北(180°=底)，
       // 与斗柄顺时针周年同向排布——从立春起顺时针每气 +15°
-      final ang = (45.0 + k * 15.0) * math.pi / 180;
+      final ang = BeidouBackground.termSlotAngle(k) * math.pi / 180;
       final dx = math.sin(ang), dy = -math.cos(ang);
       final pos = Offset(pole.dx + dx * ringR, pole.dy + dy * ringR);
       final isCurrent = k == kNow;
@@ -274,13 +305,58 @@ class _BeidouPainter extends CustomPainter {
     }
   }
 
-  /// 方位标注：轨道外四正位——上北、下南、左东、右西（仰视朝星图式，
-  /// 与顺时针周日运动自洽：东升在左、西落在右）
+  /// 北斗钟 24 小时刻度：节气盘内侧，15°/格均布（0/6/12/18 四正时加长，
+  /// 当前小时金色高亮）。表盘基准随时针（北极星→天枢虚线）重锚——
+  /// 当前小时刻度恒在时针线上；20 时刻度 ≈ 当前节气格顺时针 +41°
+  /// （天枢相对柄尖的固定超前角）。
+  void _paintHourDial(Canvas canvas, Offset pole, double orbitR) {
+    final base = BeidouBackground.hourDialBase(now);
+    for (var h = 0; h < 24; h++) {
+      final a = (base + h * 15.0) * math.pi / 180;
+      final dir = Offset(math.sin(a), -math.cos(a));
+      final major = h % 6 == 0; // 子夜 0、卯 6、午 12、酉 18
+      final isNow = h == now.hour;
+      canvas.drawLine(
+        pole + dir * (orbitR * (major ? 0.400 : 0.415)),
+        pole + dir * (orbitR * 0.455),
+        Paint()
+          ..color = isNow
+              ? const Color(0xFFFFD873).withValues(alpha: 0.90)
+              : LingShuColors.paper.withValues(alpha: major ? 0.38 : 0.20)
+          ..strokeWidth = isNow ? 1.8 : (major ? 1.2 : 0.9),
+      );
+    }
+  }
+
+  /// 当前时辰读数（如「戌时」）：节气盘内侧、沿当前节气格方向。
+  void _paintShichen(Canvas canvas, Offset pole, double orbitR) {
+    final a = BeidouBackground.termSlotAngle(
+            BeidouBackground.currentTermIndex(now)) *
+        math.pi / 180;
+    final dir = Offset(math.sin(a), -math.cos(a));
+    final tp = TextPainter(
+      text: TextSpan(
+        text: BeidouBackground.shichenOf(now),
+        style: TextStyle(
+          fontSize: 10.5,
+          fontWeight: FontWeight.w600,
+          letterSpacing: 1.2,
+          color: LingShuColors.paper.withValues(alpha: 0.60),
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    )..layout();
+    final c = pole + dir * (orbitR * 0.34);
+    tp.paint(canvas, c - Offset(tp.width / 2, tp.height / 2));
+  }
+
+  /// 方位标注：轨道外四正位——上南、下北、左东、右西（传统式盘方位，
+  /// 上南下北；与顺时针周日运动自洽：东升在左、西落在右）
   void _paintCardinalMarks(Canvas canvas, Offset pole, double radius) {
     const marks = [
-      ('北', 0.0),
+      ('南', 0.0),
       ('西', 90.0),
-      ('南', 180.0),
+      ('北', 180.0),
       ('东', 270.0),
     ];
     for (final (name, deg) in marks) {
