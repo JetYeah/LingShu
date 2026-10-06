@@ -243,27 +243,9 @@ class _AiHomePageState extends ConsumerState<AiHomePage>
         ]),
       );
 
-  /// 空闲态：北斗绕「北天极」（原 Logo 位置，星野层绘制）流转，
-  /// 中轴留白 + 标语；快捷功能贴在输入框上方（见 _inputArea）
+  /// 空闲态：星野即主视觉（北斗绕北天极流转），标语贴近底部输入区
   Widget _idleView() {
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const SizedBox(height: 150), // 让出北天极旋转区（背景层绘制北斗）
-          const Text('一句话，我替你打理健康档案',
-              style: TextStyle(
-                  fontSize: 17,
-                  letterSpacing: 2,
-                  color: _paper,
-                  fontFamily: 'SerifSC')),
-          const SizedBox(height: 6),
-          Text('传病历照片自动归档 · 说句话查指标趋势 · 养生问答',
-              style: TextStyle(
-                  fontSize: 11.5, color: _paper.withValues(alpha: 0.68))),
-        ],
-      ),
-    );
+    return const SizedBox.expand(); // 星野留白；标语已并入 _inputArea 顶部
   }
 
   Widget _chatView() {
@@ -369,6 +351,16 @@ class _AiHomePageState extends ConsumerState<AiHomePage>
     return Padding(
       padding: const EdgeInsets.fromLTRB(14, 4, 14, 0),
       child: Column(children: [
+        // 空闲态标语：贴在快捷按钮上方一点点
+        if (_msgs.isEmpty) ...[
+          Text('一句话，我替你打理健康档案',
+              style: const TextStyle(
+                  fontSize: 15,
+                  letterSpacing: 2,
+                  color: _paper,
+                  fontFamily: 'SerifSC')),
+          const SizedBox(height: 8),
+        ],
         // 快捷功能：贴在输入框上方（仅空闲无会话时显示），可换行不超屏
         if (_msgs.isEmpty)
           Padding(
@@ -380,7 +372,6 @@ class _AiHomePageState extends ConsumerState<AiHomePage>
                 for (final (emoji, text) in const [
                   ('📊', '看看最近7天的血糖'),
                   ('🗂', '帮我把这张病历归档'),
-                  ('🌿', '晚上睡不着怎么办'),
                 ])
                   // 自绘胶囊而非 ActionChip：应用主题会把 chip 背景强制成
                   // 不透明 surface（白色），白字落在白底上会隐形（真机踩坑）
