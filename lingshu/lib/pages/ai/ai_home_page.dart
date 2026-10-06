@@ -434,7 +434,7 @@ class _AiHomePageState extends ConsumerState<AiHomePage>
         Container(
           padding: const EdgeInsets.fromLTRB(6, 4, 6, 4),
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.10),
+            color: Colors.white.withValues(alpha: 0.94),
             borderRadius: BorderRadius.circular(24),
             border: Border.all(color: Colors.white.withValues(alpha: 0.18)),
           ),
@@ -442,22 +442,23 @@ class _AiHomePageState extends ConsumerState<AiHomePage>
             IconButton(
               tooltip: '添加照片（可多选）',
               icon: Icon(Icons.add_circle_outline,
-                  size: 24, color: _paper.withValues(alpha: 0.85)),
+                  size: 24, color: LingShuColors.inkSoft),
               onPressed: _pickImages,
             ),
             Expanded(
               child: TextField(
                 controller: _input,
-                style: const TextStyle(color: _paper, fontSize: 14.5),
+                style: const TextStyle(color: LingShuColors.ink, fontSize: 14.5),
                 maxLines: 4,
                 minLines: 1,
-                cursorColor: _gold,
+                cursorColor: LingShuColors.ink,
                 decoration: InputDecoration(
                   border: InputBorder.none,
                   isDense: true,
                   hintText: '传病历照片归档 / 查指标 / 提问…',
                   hintStyle: TextStyle(
-                      color: _paper.withValues(alpha: 0.62), fontSize: 13.5),
+                      color: LingShuColors.inkSoft.withValues(alpha: 0.85),
+                      fontSize: 13.5),
                 ),
                 onSubmitted: (_) => _send(),
               ),

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:drift/drift.dart' hide Column;
@@ -432,12 +433,15 @@ class _MedCard extends ConsumerWidget {
                   ),
                 );
                 if (ok == true) {
-                  await ref
-                      .read(notificationServiceProvider)
-                      .cancelForMedication(med.id);
+                  // 先落库让卡片立即从列表消失；通知取消放后台兜底——
+                  // cancelForMedication 串行几百次平台调用需数秒，
+                  // 放在写库前会让卡片看起来"停用了也没清理掉"
                   await (db.update(db.medications)
                         ..where((t) => t.id.equals(med.id)))
                       .write(const MedicationsCompanion(active: Value(false)));
+                  unawaited(ref
+                      .read(notificationServiceProvider)
+                      .cancelForMedication(med.id));
                 }
               },
             ),
