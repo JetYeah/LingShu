@@ -210,18 +210,14 @@ class _BeidouPainter extends CustomPainter {
     }
   }
 
-  /// 二十四节气环：24 格均分（15°/格），画在轨道内侧（r×0.56）。
-  /// 环旋转对齐 = 当前斗柄（摇光）实指方向 ↔ 当前节气格中心，
-  /// 斗柄每天扫过约 1°，一格约 15 天。
+  /// 二十四节气环：传统斗建固定盘（罗盘式）。
+  /// 立春钉在寅位（罗盘方位 60°，东偏北），此后每节气固定 15° 逆时针排布
+  /// （斗柄周年视运动方向）。盘不随时钟旋转——黄昏时斗柄大致指着当前
+  /// 节气，其他时刻的偏离量即「时辰」（斗转星移可读时）。
   void _paintSolarTermRing(
       Canvas canvas, Offset pole, double radius, Offset tip) {
     final ringR = radius * 0.56;
-    final tipDir = (math.atan2(tip.dx - pole.dx, -(tip.dy - pole.dy)) *
-            180 /
-            math.pi %
-        360 + 360) % 360; // 屏幕方位角（上=0/北）
     final kNow = BeidouBackground.currentTermIndex(now);
-    final rotation = (tipDir - kNow * 15.0) * math.pi / 180;
 
     // 淡环底圈
     canvas.drawCircle(
@@ -234,7 +230,8 @@ class _BeidouPainter extends CustomPainter {
     );
 
     for (var k = 0; k < 24; k++) {
-      final ang = rotation + k * 15.0 * math.pi / 180;
+      // 固定盘：立春 60°（寅位），斗柄周年沿角度递减方向扫格
+      final ang = (60.0 - k * 15.0) * math.pi / 180;
       final dx = math.sin(ang), dy = -math.cos(ang);
       final pos = Offset(pole.dx + dx * ringR, pole.dy + dy * ringR);
       final isCurrent = k == kNow;
