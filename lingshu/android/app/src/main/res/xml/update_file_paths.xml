@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 应用内更新 APK 的存放位置：
+     path_provider getExternalStorageDirectory() → Context.getExternalFilesDir -->
+<paths xmlns:android="http://schemas.android.com/apk/res/android">
+    <external-files-path
+        name="update"
+        path="update/" />
+</paths>
