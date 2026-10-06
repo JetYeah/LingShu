@@ -44,10 +44,10 @@ class BeidouAstronomy {
     for (var i = 0; i < 7; i++) {
       final theta = _wrapDegrees(lst - _ras[i]) * math.pi / 180;
       final r = (90.0 - _decs[i]) / maxPoleDist * radiusPx;
-      // 北天区朝北观看的星图方位：HA=0 星在天极正上方（上中天）；
-      // HA 增大（向西）星向左侧移动——绕极逆时针，东升（右）西落（左）。
-      // x 取负号：屏幕右方 = 东，与真实朝北观感一致。
-      out.add((x: cx - r * math.sin(theta), y: cy - r * math.cos(theta)));
+      // 北天区「仰视朝北」星图方位（星图 App 式）：HA=0 星在天极正上方
+      // （上中天）；HA 增大（向西）星向右侧移动——东升（左）西落（右），
+      // 周日与周年皆顺时针绕极，读时方向与钟表一致。
+      out.add((x: cx + r * math.sin(theta), y: cy - r * math.cos(theta)));
     }
     return out;
   }

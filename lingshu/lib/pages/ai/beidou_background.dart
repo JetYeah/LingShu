@@ -230,8 +230,9 @@ class _BeidouPainter extends CustomPainter {
     );
 
     for (var k = 0; k < 24; k++) {
-      // 固定盘：立春 60°（寅位），斗柄周年沿角度递减方向扫格
-      final ang = (60.0 - k * 15.0) * math.pi / 180;
+      // 固定盘（斗建四正锚）：夏至=正南(180°)、冬至=正北(0°)，
+      // 与斗柄顺时针周年同向排布——从立春起顺时针每气 +15°
+      final ang = (45.0 + k * 15.0) * math.pi / 180;
       final dx = math.sin(ang), dy = -math.cos(ang);
       final pos = Offset(pole.dx + dx * ringR, pole.dy + dy * ringR);
       final isCurrent = k == kNow;
@@ -273,13 +274,14 @@ class _BeidouPainter extends CustomPainter {
     }
   }
 
-  /// 方位标注：轨道外四正位——上北、下南、左西、右东（朝北观星图式）
+  /// 方位标注：轨道外四正位——上北、下南、左东、右西（仰视朝星图式，
+  /// 与顺时针周日运动自洽：东升在左、西落在右）
   void _paintCardinalMarks(Canvas canvas, Offset pole, double radius) {
     const marks = [
       ('北', 0.0),
-      ('东', 90.0),
+      ('西', 90.0),
       ('南', 180.0),
-      ('西', 270.0),
+      ('东', 270.0),
     ];
     for (final (name, deg) in marks) {
       final a = deg * math.pi / 180;

@@ -16,29 +16,32 @@ void main() {
     return (a % 360 + 360) % 360;
   }
 
-  test('绝对相位：与 NOAA 独立公式的 LST 一致（摇光 HA 反推）', () {
-    // NOAA: GMST(0hUT) = 6.6974h + 0.0657098244·d0; 2026-10-06 d0=9774.5
-    // → GMST(0h)=0.9h; +12hUT×1.0027 → GMST=12.93h=193.9°
-    // LST = 193.9 + 116.4 = 310.3°（±分钟精度）
-    // 摇光 RA 206.89 → HA = 310.3-206.89 = 103.4°
-    // 屏幕柄向 ang = (360-HA) → 256.6°±2
+  test('绝对相位：与 NOAA 独立公式的 LST 一致（摇光 HA 反推，镜像系）', () {
+    // NOAA: LST(2026-10-06 20:00 北京) = 310.3°；摇光 HA = 103.4°
+    // 镜像系（顺时针、东左西右）屏幕角 = HA → 103.4°±3
     final dir = handleDir(DateTime(2026, 10, 6, 20));
-    final d = (dir - 256.6).abs();
+    final d = (dir - 103.4).abs();
     final dist = d > 180 ? 360 - d : d;
     expect(dist, lessThan(3), reason: 'LST 与 NOAA 公式偏差应 <3°（实测 $dir°）');
   });
 
-  test('实景锚点：10 月晚 8 点北斗在左下、斗柄指西（星图软件实景）', () {
+  test('实景锚点：10 月晚 8 点北斗在西侧低垂（星图软件实景，镜像系）', () {
     final dir = handleDir(DateTime(2026, 10, 6, 20));
-    // 西=270°，容差 45°（十月傍晚斗柄西垂）
-    final d = (dir - 270).abs();
+    // 西=90°（右侧），容差 45°（十月傍晚斗柄西垂）
+    final d = (dir - 90).abs();
     final dist = d > 180 ? 360 - d : d;
     expect(dist, lessThan(45), reason: '十月斗柄西垂（实测 $dir°）');
 
-    // 北斗整体应在天极左侧（x < 0.5）
+    // 北斗整体应在天极右侧（西侧）
     final p = BeidouAstronomy.starPositions(DateTime(2026, 10, 6, 20));
-    final leftCount = p.where((s) => s.x < 0.5).length;
-    expect(leftCount, greaterThanOrEqualTo(5), reason: '十月北斗应在天极西侧');
+    final rightCount = p.where((s) => s.x > 0.5).length;
+    expect(rightCount, greaterThanOrEqualTo(5), reason: '十月北斗应在天极西侧');
+  });
+
+  test('节气盘四正锚：夏至=正南(180°)、冬至=正北(0°)（仰视镜像系）', () {
+    // 由 ang(k)=45+15k：夏至 k=9 → 180；冬至 k=21 → 360→0
+    expect((45 + 9 * 15) % 360, 180);
+    expect((45 + 21 * 15) % 360, 0);
   });
 
   test('周年旋转：每天约 1°，方向一致', () {
