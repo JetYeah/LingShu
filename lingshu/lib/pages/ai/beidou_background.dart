@@ -7,15 +7,33 @@ import '../../core/theme.dart';
 
 /// 北斗七星 · 呼吸星野背景（真实天文版）。
 ///
-/// 七星按真实 J2000 坐标 + 当地恒星时绕北天极旋转：随季节/时刻转动，
-/// 斗柄指向暗合《鹗冠子》四时口诀（春东/夏南/秋西/冬北，晚 8-9 点）。
-/// 北天极位于原 Logo 位置（页面中轴偏上），北斗绕它流转。
-/// 闪烁：每约 3 秒一轮，任一时刻至多 2 颗星处于闪烁中——平常白色，
-/// 闪烁时渐变为亮黄再回到白色。
+/// 三层同心圆构图（圆心 = 原天极/原 Logo 位）：
+///   ① 中心：北极星（金色星芒，恒定不闪）；
+///   ② 内圈：二十四节气环（每格 15°，斗柄每天扫过约 1°，一格约 15 天；
+///      环整体对齐使斗柄此刻正指当前节气，其余节气随之展开）；
+///   ③ 外圈：北斗七星真实轨道（J2000 坐标 + 当地恒星时，随季节/时刻流转，
+///      十月晚八点斗柄西垂，与真实星空一致）。
+/// 另在轨道四正位标注 东南西北 方位（上北下南左西右东，朝北观星图式）。
+/// 闪烁：每 3 秒一窗随机选 1~2 颗呼吸（白→亮黄→白）。
 class BeidouBackground extends StatelessWidget {
   final double t; // 动画秒数（驱动闪烁相位）
   final DateTime? now; // 观测时刻（默认当前；可注入测试/演示时刻）
   const BeidouBackground({super.key, required this.t, this.now});
+
+  /// 二十四节气名（k=0 立春，黄经 315°起，每 15°一格）
+  static const solarTerms = [
+    '立春', '雨水', '惊蛰', '春分', '清明', '谷雨',
+    '立夏', '小满', '芒种', '夏至', '小暑', '大暑',
+    '立秋', '处暑', '白露', '秋分', '寒露', '霜降',
+    '立冬', '小雪', '大雪', '冬至', '小寒', '大寒',
+  ];
+
+  /// 当前节气序号（按日近似：立春≈年内第 35 天，每节气≈15.218 天）
+  static int currentTermIndex(DateTime now) {
+    final doy = now.difference(DateTime(now.year, 1, 1)).inDays + 1;
+    final k = (((doy - 35) % 365 + 365) % 365) / 15.218;
+    return k.floor() % 24;
+  }
 
   /// 散布小星（固定种子，避免每帧随机跳动）
   static final _stars = List.generate(46, (i) {
@@ -74,11 +92,20 @@ class _BeidouPainter extends CustomPainter {
     // 北斗主星：北天极 = 原 Logo 中心（中轴、屏高 35%）——北斗绕它流转；
     // 轨道半径 = 宽×0.40，强化「绕原 Logo 位置旋转」的观感
     final radius = size.width * 0.40;
+    final pole = Offset(size.width / 2, size.height * 0.35);
     final pts = BeidouAstronomy.starPositionsPx(now,
-        cx: size.width / 2,
-        cy: size.height * 0.35,
+        cx: pole.dx,
+        cy: pole.dy,
         radiusPx: radius,
       ).map((s) => Offset(s.x, s.y)).toList();
+
+    // ── 二十四节气环（内圈，r=轨道×0.56）──
+    // 环整体旋转对齐：第 k(当前节气) 格中心 = 此刻摇光（柄尖）实指方向；
+    // 其余节气 15°/格 展开——斗柄每天扫约 1°，一格≈15 天，即「斗转星移」。
+    _paintSolarTermRing(canvas, pole, radius, pts[6]);
+
+    // ── 方位标注（轨道外四正位：上北下南左西右东，朝北观星图式）──
+    _paintCardinalMarks(canvas, pole, radius);
 
     // 星间连线（斗口→柄尖一条折线，随呼吸微亮）
     final breathe = 0.5 + 0.5 * math.sin(t * 2 * math.pi / 6);
@@ -92,7 +119,6 @@ class _BeidouPainter extends CustomPainter {
 
     // 北极星→天枢 虚线（寻星指引：斗口天枢方向即北极星所在，
     // 经典口诀「天璇天枢连线延长五倍抵北辰」）
-    final pole = Offset(size.width / 2, size.height * 0.35);
     final dashPaint = Paint()
       ..color = LingShuColors.goldSoft.withValues(alpha: 0.35)
       ..strokeWidth = 1.2;
@@ -181,6 +207,101 @@ class _BeidouPainter extends CustomPainter {
         radius * 0.5,
         Paint()..color = Colors.white.withValues(alpha: 0.55 + 0.45 * glow),
       );
+    }
+  }
+
+  /// 二十四节气环：24 格均分（15°/格），画在轨道内侧（r×0.56）。
+  /// 环旋转对齐 = 当前斗柄（摇光）实指方向 ↔ 当前节气格中心，
+  /// 斗柄每天扫过约 1°，一格约 15 天。
+  void _paintSolarTermRing(
+      Canvas canvas, Offset pole, double radius, Offset tip) {
+    final ringR = radius * 0.56;
+    final tipDir = (math.atan2(tip.dx - pole.dx, -(tip.dy - pole.dy)) *
+            180 /
+            math.pi %
+        360 + 360) % 360; // 屏幕方位角（上=0/北）
+    final kNow = BeidouBackground.currentTermIndex(now);
+    final rotation = (tipDir - kNow * 15.0) * math.pi / 180;
+
+    // 淡环底圈
+    canvas.drawCircle(
+      pole,
+      ringR,
+      Paint()
+        ..color = LingShuColors.goldSoft.withValues(alpha: 0.05)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1,
+    );
+
+    for (var k = 0; k < 24; k++) {
+      final ang = rotation + k * 15.0 * math.pi / 180;
+      final dx = math.sin(ang), dy = -math.cos(ang);
+      final pos = Offset(pole.dx + dx * ringR, pole.dy + dy * ringR);
+      final isCurrent = k == kNow;
+
+      // 刻度点
+      canvas.drawCircle(
+        pos,
+        isCurrent ? 2.2 : 1.1,
+        Paint()
+          ..color = isCurrent
+              ? const Color(0xFFFFD873).withValues(alpha: 0.9)
+              : LingShuColors.paper.withValues(alpha: 0.30),
+      );
+
+      // 节气名：罗盘式排布——文字底边朝环心外侧（沿切线旋转），
+      // 当前节气金色放大，其余纸色微光
+      final tp = TextPainter(
+        text: TextSpan(
+          text: BeidouBackground.solarTerms[k],
+          style: TextStyle(
+            fontSize: isCurrent ? 11 : 9.5,
+            fontWeight: isCurrent ? FontWeight.w700 : FontWeight.w500,
+            color: isCurrent
+                ? const Color(0xFFFFD873)
+                : LingShuColors.paper.withValues(alpha: 0.38),
+          ),
+        ),
+        textDirection: TextDirection.ltr,
+      )..layout();
+      final center = Offset(
+        pole.dx + dx * (ringR + 14 + tp.height / 2),
+        pole.dy + dy * (ringR + 14 + tp.height / 2),
+      );
+      canvas.save();
+      canvas.translate(center.dx, center.dy);
+      canvas.rotate(ang); // 顶部正立、两侧竖排、底部倒立（罗盘式）
+      tp.paint(canvas, Offset(-tp.width / 2, -tp.height / 2));
+      canvas.restore();
+    }
+  }
+
+  /// 方位标注：轨道外四正位——上北、下南、左西、右东（朝北观星图式）
+  void _paintCardinalMarks(Canvas canvas, Offset pole, double radius) {
+    const marks = [
+      ('北', 0.0),
+      ('东', 90.0),
+      ('南', 180.0),
+      ('西', 270.0),
+    ];
+    for (final (name, deg) in marks) {
+      final a = deg * math.pi / 180;
+      final pos = Offset(
+        pole.dx + math.sin(a) * (radius + 26),
+        pole.dy - math.cos(a) * (radius + 26),
+      );
+      final tp = TextPainter(
+        text: TextSpan(
+          text: name,
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w700,
+            color: LingShuColors.paper.withValues(alpha: 0.55),
+          ),
+        ),
+        textDirection: TextDirection.ltr,
+      )..layout();
+      tp.paint(canvas, pos - Offset(tp.width / 2, tp.height / 2));
     }
   }
 
