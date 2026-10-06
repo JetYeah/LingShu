@@ -1,7 +1,7 @@
 name: lingshu
 description: "灵枢 — 阴阳五行 × 中医 个人健康管理 App"
 publish_to: 'none'
-version: 0.1.45+9914
+version: 0.1.46+9915
 
 environment:
   sdk: ^3.13.3
