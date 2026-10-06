@@ -400,6 +400,9 @@ class _RecordImportPageState extends ConsumerState<RecordImportPage> {
             .write(MetricsCompanion(tag: Value(m.category)));
       }
     } else {
+      // 新建指标随路径种入指南参考限：血压收缩 90~139/舒张 60~89，
+      // 血糖（餐前口径）3.9~6.1——趋势图与异常判定即时有据
+      final isSugar = m.name.contains('血糖');
       metric = await db.into(db.metrics).insertReturning(
             MetricsCompanion.insert(
               profileId: profileId,
@@ -410,6 +413,10 @@ class _RecordImportPageState extends ConsumerState<RecordImportPage> {
               tag: Value((m.category != null && m.category!.isNotEmpty)
                   ? m.category
                   : null),
+              refLow: Value(isBp ? 60.0 : (isSugar ? 3.9 : null)),
+              refHigh: Value(isBp ? 89.0 : (isSugar ? 6.1 : null)),
+              refLow2: Value(isBp ? 90.0 : null),
+              refHigh2: Value(isBp ? 139.0 : null),
             ),
           );
     }

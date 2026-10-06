@@ -68,9 +68,21 @@ class _MedicationsPageState extends ConsumerState<MedicationsPage> {
   /// 日常记录：快速录入血糖/血压/体重等居家数据，进入健康追踪趋势图，
   /// 与医院检验报告（拍照归档识别）分开，居家自测与院检在图上合并看趋势
   Future<void> _quickRecord(String name, String unit,
-      {bool dual = false, String code = 'custom', String tag = '基础体征'}) async {
+      {bool dual = false,
+      String code = 'custom',
+      String tag = '基础体征',
+      double? refLow,
+      double? refHigh,
+      double? refLow2,
+      double? refHigh2}) async {
     final metric = await _ensureMetric(name, unit,
-        dual: dual, code: code, tag: tag);
+        dual: dual,
+        code: code,
+        tag: tag,
+        refLow: refLow,
+        refHigh: refHigh,
+        refLow2: refLow2,
+        refHigh2: refHigh2);
     if (metric == null || !mounted) return;
     await showMetricEntry(context, ref, metric);
   }
@@ -80,12 +92,14 @@ class _MedicationsPageState extends ConsumerState<MedicationsPage> {
       String code = 'custom',
       String tag = '基础体征',
       double? refLow,
-      double? refHigh}) async {
+      double? refHigh,
+      double? refLow2,
+      double? refHigh2}) async {
     final db = ref.read(dbProvider);
     final profileId = ref.read(currentProfileIdProvider);
     if (profileId == null) return null;
     final hit = await (db.select(db.metrics)
-          ..where((t) => t.profileId.equals(profileId) & t.name.equals(name)))
+        ..where((t) => t.profileId.equals(profileId) & t.name.equals(name)))
         .get();
     if (hit.isNotEmpty) return hit.first;
     return db.into(db.metrics).insertReturning(MetricsCompanion.insert(
@@ -97,6 +111,8 @@ class _MedicationsPageState extends ConsumerState<MedicationsPage> {
       tag: Value(tag),
       refLow: Value(refLow),
       refHigh: Value(refHigh),
+      refLow2: Value(refLow2),
+      refHigh2: Value(refHigh2),
     ));
   }
 
@@ -180,13 +196,21 @@ class _MedicationsPageState extends ConsumerState<MedicationsPage> {
               ActionChip(
                 avatar: const Icon(Icons.favorite_border, size: 15),
                 label: const Text('血压 · 心率'),
-                onPressed: () =>
-                    _quickRecord('血压', 'mmHg', dual: true, code: 'blood_pressure'),
+                onPressed: () => _quickRecord(
+                    '血压', 'mmHg',
+                    dual: true,
+                    code: 'blood_pressure',
+                    // 指南区间随指标落库：收缩压 90~139、舒张压 60~89
+                    refLow: 60,
+                    refHigh: 89,
+                    refLow2: 90,
+                    refHigh2: 139),
               ),
               ActionChip(
                 avatar: const Icon(Icons.water_drop_outlined, size: 15),
                 label: const Text('血糖'),
-                onPressed: () => _quickRecord('血糖', 'mmol/L', tag: '血糖'),
+                onPressed: () => _quickRecord('血糖', 'mmol/L',
+                    tag: '血糖', refLow: 3.9, refHigh: 6.1),
               ),
               ActionChip(
                 avatar: const Icon(Icons.monitor_weight_outlined, size: 15),

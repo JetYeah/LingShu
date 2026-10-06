@@ -17,6 +17,7 @@ import '../../core/theme.dart';
 import '../../core/ui.dart';
 import '../../providers.dart';
 import '../profile/hr_measure_sheet.dart';
+import 'metric_ranges.dart';
 
 /// AI 合并建议：sources 的名称与 target 指向同一检查项，
 /// 确认后记录并入 target、删多余条目，必要时统一命名
@@ -599,18 +600,7 @@ class _MetricCard extends ConsumerWidget {
         .write(MetricsCompanion(followed: Value(!metric.followed)));
   }
 
-  bool _isAbnormal(MetricValue v) {
-    if (metric.dualValue) {
-      final sysOk = metric.refLow == null || v.value1 >= metric.refLow!;
-      final sysHi = metric.refHigh2 == null || v.value1 <= metric.refHigh2!;
-      final diaOk = metric.refLow == null || (v.value2 ?? 0) >= metric.refLow!;
-      final diaHi = metric.refHigh == null || (v.value2 ?? 0) <= metric.refHigh!;
-      return !(sysOk && sysHi && diaOk && diaHi);
-    }
-    final lo = metric.refLow == null || v.value1 >= metric.refLow!;
-    final hi = metric.refHigh == null || v.value1 <= metric.refHigh!;
-    return !(lo && hi);
-  }
+  bool _isAbnormal(MetricValue v) => isAbnormal(metric, v);
 
   Widget _abnormalBadge(MetricValue v) => Container(
         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
