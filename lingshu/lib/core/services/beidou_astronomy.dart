@@ -44,8 +44,10 @@ class BeidouAstronomy {
     for (var i = 0; i < 7; i++) {
       final theta = _wrapDegrees(lst - _ras[i]) * math.pi / 180;
       final r = (90.0 - _decs[i]) / maxPoleDist * radiusPx;
-      // θ=0 时星在天极正下方（南，屏幕 y+）；北半球仰望，绕极逆时针旋转
-      out.add((x: cx + r * math.sin(theta), y: cy - r * math.cos(theta)));
+      // 北天区朝北观看的星图方位：HA=0 星在天极正上方（上中天）；
+      // HA 增大（向西）星向左侧移动——绕极逆时针，东升（右）西落（左）。
+      // x 取负号：屏幕右方 = 东，与真实朝北观感一致。
+      out.add((x: cx - r * math.sin(theta), y: cy - r * math.cos(theta)));
     }
     return out;
   }
@@ -56,12 +58,13 @@ class BeidouAstronomy {
     return starPositionsPx(now, cx: 0.5, cy: 0.30, radiusPx: 0.42);
   }
 
-  /// 当地恒星时（度）。格林尼治 0h 恒星时 ≈ 100.46 + 0.985647·d，
-  /// 加经度与小时角修正，精度 ±0.1° 足够背景动画用。
+  /// 当地恒星时（度）。GMST = 280.46061837 + 360.98564736629·d，
+  /// d 为 J2000 起算的 UT 天数（含小数），加东经 116.4°（华北）。
+  /// 实测校验：2026-10-06 20:00 北京 → LST ≈ 311.6°（与星图软件一致）。
   static double _localSiderealTime(DateTime now) {
     final d = _daysSinceJ2000(now);
-    final gmst = 100.46 + 0.985647 * d + 15.04107 * now.hour + now.minute / 60 * 15.04107;
-    return _wrapDegrees(gmst + 116.4); // 东经 116.4°（华北）
+    final gmst = 280.46061837 + 360.98564736629 * d;
+    return _wrapDegrees(gmst + 116.4);
   }
 
   static double _daysSinceJ2000(DateTime now) {

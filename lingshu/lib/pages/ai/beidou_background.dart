@@ -23,35 +23,17 @@ class BeidouBackground extends StatelessWidget {
     return (r.nextDouble(), r.nextDouble() * 0.92, r.nextDouble());
   });
 
-  /// 闪烁编排：每颗星约 3 秒闪一次（白→亮黄→白，窗 0.7s），起始时刻
-  /// 随机（固定种子）且经冲突退避——生成时按时间轴扫描，任一时刻
-  /// 同时闪烁的星 ≤ 2，不满足就整体后移，直至全部排入。
-  /// 结果非均匀：闪烁次序随机、间隔随性，无「排队轮流」感。
-  static final List<double> _blinkStart = _computeBlinkStarts();
-  static List<double> _computeBlinkStarts() {
-    const win = 0.7;
-    final r = math.Random(1006);
-    final starts = <double>[];
-    for (var i = 0; i < 7; i++) {
-      var t = 0.0;
-      for (;;) {
-        t = i * 0.42 + r.nextDouble() * 0.5; // 随机散布（带基础间隔）
-        // 与已排星求交：任一时刻闪烁数 ≤2 → 新星窗口与至多 1 个已有窗口重叠
-        final conflicts = starts.where((s) => (s - t).abs() < win).length;
-        if (conflicts <= 1) break;
-      }
-      starts.add(t);
-    }
-    return starts;
-  }
-
-  /// 星 i 在时刻 t 的闪烁强度 0..1（1=最亮黄）。周期 3s，闪烁窗 0.7s。
+  /// 闪烁编排：每 3 秒一个窗口，从 7 颗中随机挑 1~2 颗，被选中的星在
+  /// 该窗口内做一次完整呼吸（白→亮黄→白，3s 一息）；下个窗口重新随机。
+  /// 选择以窗口序号为种子——同一窗口内逐帧稳定，跨窗口随机变化。
   static double _blinkGlow(int i, double t) {
-    const cycle = 3.0, win = 0.7;
-    final u = ((t - _blinkStart[i]) % cycle + cycle) % cycle;
-    if (u > win) return 0; // 静默期：纯白
-    // 白→黄→白：正弦半波
-    return 0.5 - 0.5 * math.cos(u / win * 2 * math.pi);
+    final window = t ~/ 3;
+    final r = math.Random(window * 2654435761 + 97);
+    final pickA = r.nextInt(7);
+    final pickB = r.nextBool() ? r.nextInt(7) : -1; // 约 50% 窗口挑 2 颗
+    if (i != pickA && i != pickB) return 0; // 未选中：纯白静默
+    final u = (t % 3) / 3; // 窗口内进度 0..1
+    return 0.5 - 0.5 * math.cos(u * 2 * math.pi); // 一次完整呼吸
   }
 
   @override
@@ -106,6 +88,66 @@ class _BeidouPainter extends CustomPainter {
       ..style = PaintingStyle.stroke;
     for (var i = 0; i < pts.length - 1; i++) {
       canvas.drawLine(pts[i], pts[i + 1], linePaint);
+    }
+
+    // 北极星→天枢 虚线（寻星指引：斗口天枢方向即北极星所在，
+    // 经典口诀「天璇天枢连线延长五倍抵北辰」）
+    final pole = Offset(size.width / 2, size.height * 0.35);
+    final dashPaint = Paint()
+      ..color = LingShuColors.goldSoft.withValues(alpha: 0.35)
+      ..strokeWidth = 1.2;
+    {
+      final end = pts[0]; // 天枢（斗口第一颗）
+      final dx = end.dx - pole.dx, dy = end.dy - pole.dy;
+      const dashLen = 7.0, gapLen = 6.0;
+      var s = 0.0;
+      final total = math.sqrt(dx * dx + dy * dy);
+      while (s < total) {
+        final e = math.min(s + dashLen, total);
+        canvas.drawLine(
+          Offset(pole.dx + dx * s / total, pole.dy + dy * s / total),
+          Offset(pole.dx + dx * e / total, pole.dy + dy * e / total),
+          dashPaint,
+        );
+        s = e + gapLen;
+      }
+    }
+
+    // 北极星：金色星芒（参考实时星图样式）——十字光芒 + 光晕 + 亮芯，
+    // 位于原 Logo 中心，恒定不闪（众星绕转的定盘星）
+    {
+      const gold = Color(0xFFFFE9A8);
+      const core = Color(0xFFFFD873);
+      // 光晕
+      canvas.drawCircle(
+        pole,
+        16,
+        Paint()
+          ..color = core.withValues(alpha: 0.12)
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 12),
+      );
+      // 十字星芒（四条渐细的长菱形）
+      final spikePaint = Paint()..color = gold.withValues(alpha: 0.55);
+      for (var k = 0; k < 2; k++) {
+        final path = Path();
+        if (k == 0) {
+          path.moveTo(pole.dx, pole.dy - 22);
+          path.lineTo(pole.dx + 2.2, pole.dy);
+          path.lineTo(pole.dx, pole.dy + 22);
+          path.lineTo(pole.dx - 2.2, pole.dy);
+        } else {
+          path.moveTo(pole.dx - 22, pole.dy);
+          path.lineTo(pole.dx, pole.dy + 2.2);
+          path.lineTo(pole.dx + 22, pole.dy);
+          path.lineTo(pole.dx, pole.dy - 2.2);
+        }
+        path.close();
+        canvas.drawPath(path, spikePaint);
+      }
+      // 亮芯
+      canvas.drawCircle(pole, 3.2, Paint()..color = core);
+      canvas.drawCircle(
+          pole, 1.6, Paint()..color = const Color(0xFFFFFFFF));
     }
 
     // 主星：闪烁编排驱动——任一时刻 ≤2 颗，白→亮黄→白（1.4s 完成一次），
