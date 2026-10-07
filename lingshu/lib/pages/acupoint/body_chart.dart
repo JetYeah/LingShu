@@ -233,7 +233,11 @@ class _ChartPainter extends CustomPainter {
   });
 
   static const red = Color(0xFFB03A2E);
+  static const vermilion = Color(0xFFE34234); // 奇经八脉专用朱砂红
   static const goldDot = Color(0xFFD9AE62);
+  static const _extraVessels = {
+    'RN', 'DU', 'CHONG', 'DAI', 'YINQIAO', 'YANGQIAO', 'YINWEI', 'YANGWEI'
+  };
 
   /// Catmull-Rom 样条转三次贝塞尔：经络点投影折线 → 圆滑循行曲线
   Path _smooth(List<Offset> pts) {
@@ -300,27 +304,33 @@ class _ChartPainter extends CustomPainter {
     }
 
     // 红色经络线：细线 + 样条平滑（选定经络加亮，其余半透明；定位态下再压一档）
+    // 奇经八脉为朱砂红且第二遍再画：冲带跷维六脉与十二正经高度重叠（共享交会穴），
+    // 同色同层时完全被盖住，肉眼只见任督两条正中线
     final lw = (1.5 / scale).clamp(0.55, 2.0);
     final lineDimBase = spotlight == null ? 0.15 : 0.06;
-    for (final line in (v['lines'] as List).cast<Map<String, dynamic>>()) {
-      final m = line['m'] as String;
-      final emphasized = filter == m;
-      final alpha = (filter == 'ALL' || filter == 'COMMON' || emphasized)
-          ? (emphasized ? 1.0 : (spotlight == null ? 0.55 : 0.30))
-          : lineDimBase;
-      final paint = Paint()
-        ..style = PaintingStyle.stroke
-        ..strokeCap = StrokeCap.round
-        ..strokeJoin = StrokeJoin.round
-        ..strokeWidth = emphasized ? lw + 0.6 : lw
-        ..color = red.withValues(alpha: alpha);
-      for (final run
-          in (line['runs'] as List).cast<List<dynamic>>()) {
-        final pts = [
-          for (var i = 0; i < run.length; i++)
-            map(run[i][0], run[i][1]),
-        ];
-        canvas.drawPath(_smooth(pts), paint);
+    final lines = (v['lines'] as List).cast<Map<String, dynamic>>();
+    for (final isExtra in [false, true]) {
+      for (final line in lines) {
+        final m = line['m'] as String;
+        if (_extraVessels.contains(m) != isExtra) continue;
+        final emphasized = filter == m;
+        final alpha = (filter == 'ALL' || filter == 'COMMON' || emphasized)
+            ? (emphasized ? 1.0 : (spotlight == null ? 0.55 : 0.30))
+            : lineDimBase;
+        final paint = Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeCap = StrokeCap.round
+          ..strokeJoin = StrokeJoin.round
+          ..strokeWidth = emphasized ? lw + 0.6 : lw
+          ..color = (isExtra ? vermilion : red).withValues(alpha: alpha);
+        for (final run
+            in (line['runs'] as List).cast<List<dynamic>>()) {
+          final pts = [
+            for (var i = 0; i < run.length; i++)
+              map(run[i][0], run[i][1]),
+          ];
+          canvas.drawPath(_smooth(pts), paint);
+        }
       }
     }
 

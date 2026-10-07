@@ -155,6 +155,72 @@
       "shichen": null
     },
     {
+      "code": "CHONG",
+      "name": "冲脉",
+      "pinyin": "chōng mài",
+      "category": "奇经八脉",
+      "element": null,
+      "color": "#7A5C3E",
+      "pairedWith": null,
+      "flowSummary": "起于胞中，下出会阴，其前行者沿腹壁夹脐左右上行，散于胸中，上达咽喉，绕唇口；其下行者与足少阴肾经相并而行。为血海，又称十二经脉之海。",
+      "shichen": null
+    },
+    {
+      "code": "DAI",
+      "name": "带脉",
+      "pinyin": "dài mài",
+      "category": "奇经八脉",
+      "element": null,
+      "color": "#7A5C3E",
+      "pairedWith": null,
+      "flowSummary": "起于季胁，斜行至带脉穴，绕身一周，如束带然。约束纵行诸经，主司带下。",
+      "shichen": null
+    },
+    {
+      "code": "YINQIAO",
+      "name": "阴跷脉",
+      "pinyin": "yīn qiāo mài",
+      "category": "奇经八脉",
+      "element": null,
+      "color": "#7A5C3E",
+      "pairedWith": null,
+      "flowSummary": "起于内踝下照海，沿下肢内侧直上，经前阴，上沿腹胸内侧至缺盆，出人迎之前，至目内眦与阳跷会合。主一身左右之阴，司眼睑开合。",
+      "shichen": null
+    },
+    {
+      "code": "YANGQIAO",
+      "name": "阳跷脉",
+      "pinyin": "yáng qiāo mài",
+      "category": "奇经八脉",
+      "element": null,
+      "color": "#7A5C3E",
+      "pairedWith": null,
+      "flowSummary": "起于外踝下申脉，沿下肢外侧上行，经髀枢，循胁肋上肩，沿颈上挟口角，入目内眦与阴跷会合。主一身左右之阳，司肢体运动。",
+      "shichen": null
+    },
+    {
+      "code": "YINWEI",
+      "name": "阴维脉",
+      "pinyin": "yīn wéi mài",
+      "category": "奇经八脉",
+      "element": null,
+      "color": "#7A5C3E",
+      "pairedWith": null,
+      "flowSummary": "起于足内踝上筑宾，沿下肢内侧上行，入少腹，循腹内上行至胸，与任脉会于天突、廉泉。维系诸阴经。",
+      "shichen": null
+    },
+    {
+      "code": "YANGWEI",
+      "name": "阳维脉",
+      "pinyin": "yáng wéi mài",
+      "category": "奇经八脉",
+      "element": null,
+      "color": "#7A5C3E",
+      "pairedWith": null,
+      "flowSummary": "起于足外踝下金门，沿下肢外侧上行，经髀枢，循胁肋后侧上行至肩，与督脉会于哑门、风府。维系诸阳经。",
+      "shichen": null
+    },
+    {
       "code": "EX",
       "name": "经外奇穴",
       "pinyin": "jīng wài qí xué",
