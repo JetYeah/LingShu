@@ -164,6 +164,10 @@ final collectedHerbsProvider = Provider<CollectedHerbs>(
     (ref) => CollectedHerbs(ref.watch(sharedPreferencesProvider)));
 final collectedVersionProvider = StateProvider<int>((ref) => 0);
 
+/// AI 会话视图代次：每次从入口进入递增，作 /ai 路由的 page key——
+/// 每次打开都得到全新会话视图（历史从磁盘加载且默认收起）
+final aiSessionProvider = StateProvider<int>((ref) => 0);
+
 /// 全部中药（FutureProvider 全局缓存，避免每处 HerbRepo() 新建实例重复解析 879 味 JSON）
 final allHerbsProvider =
     FutureProvider<List<Herb>>((ref) => HerbRepo().all());

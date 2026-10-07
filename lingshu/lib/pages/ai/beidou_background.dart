@@ -11,7 +11,8 @@ import '../../core/theme.dart';
 ///   ① 中心：北极星（金色星芒，恒定不闪）；
 ///   ② 内圈：二十四节气固定盘（罗盘式，每格 15°，不随时钟旋转；
 ///      黄昏斗柄指当前节气，其余时刻的偏离量即「时辰」——斗转星移可读时）；
-///      盘内侧附北斗钟 24 小时刻度（北极星→天枢虚线为时针）与当前时辰读数；
+///      盘内侧北斗钟：24 小时刻度 + 十二地支时辰标注（北极星→天枢虚线为
+///      时针，指在哪支当下便是哪时辰，当前时辰金色高亮）；
 ///   ③ 外圈：北斗七星真实轨道（J2000 坐标 + 当地恒星时，随季节/时刻流转，
 ///      十月晚八点斗柄西垂，与真实星空一致）。
 /// 另在轨道四正位标注 东南西北 方位（上南下北左东右西，传统式盘方位）。
@@ -41,14 +42,14 @@ class BeidouBackground extends StatelessWidget {
   /// 当前节气格（LST(20:00)=太阳赤经+120° 恒等式保证周年对齐）。
   static double termSlotAngle(int k) => (225.0 + k * 15.0) % 360.0;
 
-  /// 十二时辰名（子时 23-1 点起，每时辰 2 小时）
-  static const _shichenChars = [
+  /// 十二时辰地支名（子时 23-1 点起，每时辰 2 小时）
+  static const shichenChars = [
     '子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥',
   ];
 
   /// 当前时辰读数（如「戌时」）：(小时+1)÷2 映射十二时辰。
   static String shichenOf(DateTime now) =>
-      '${_shichenChars[((now.hour + 1) % 24) ~/ 2]}时';
+      '${shichenChars[((now.hour + 1) % 24) ~/ 2]}时';
 
   /// 北斗钟表盘基准角（0 时刻度的角位置）：随时针（天枢虚线）逐帧重锚，
   /// 恒星日/太阳日的累计漂移由重锚吸收——当前小时刻度恒在时针线上。
@@ -131,9 +132,9 @@ class _BeidouPainter extends CustomPainter {
     // 其余节气 15°/格 顺时针展开——斗柄每天扫约 1°，一格≈15 天。
     _paintSolarTermRing(canvas, pole, radius, pts[6]);
 
-    // ── 北斗钟：24 小时刻度 + 当前时辰读数（节气盘内侧）──
+    // ── 北斗钟：24 小时刻度 + 十二地支时辰标注（节气盘内侧）──
     _paintHourDial(canvas, pole, radius);
-    _paintShichen(canvas, pole, radius);
+    _paintBranchChars(canvas, pole, radius);
 
     // ── 方位标注（轨道外四正位：上南下北左东右西，传统式盘方位）──
     _paintCardinalMarks(canvas, pole, radius);
@@ -328,26 +329,37 @@ class _BeidouPainter extends CustomPainter {
     }
   }
 
-  /// 当前时辰读数（如「戌时」）：节气盘内侧、沿当前节气格方向。
-  void _paintShichen(Canvas canvas, Offset pole, double orbitR) {
-    final a = BeidouBackground.termSlotAngle(
-            BeidouBackground.currentTermIndex(now)) *
-        math.pi / 180;
-    final dir = Offset(math.sin(a), -math.cos(a));
-    final tp = TextPainter(
-      text: TextSpan(
-        text: BeidouBackground.shichenOf(now),
-        style: TextStyle(
-          fontSize: 10.5,
-          fontWeight: FontWeight.w600,
-          letterSpacing: 1.2,
-          color: LingShuColors.paper.withValues(alpha: 0.60),
+  /// 十二地支时辰标注：画在北斗钟表盘各时辰扇区中心（= 偶数整点刻度角，
+  /// 子对 0 时、午对 12 时、戌对 20 时……），随表盘随时针重锚——
+  /// 北极星→天枢虚线（时针）指在哪支，当下便是哪时辰；
+  /// 当前时辰金色高亮，其余纸色微光。罗盘式旋排与节气名一致。
+  void _paintBranchChars(Canvas canvas, Offset pole, double orbitR) {
+    final base = BeidouBackground.hourDialBase(now);
+    final nowBranch = ((now.hour + 1) % 24) ~/ 2;
+    for (var b = 0; b < 12; b++) {
+      final ang = (base + 2 * b * 15.0) * math.pi / 180;
+      final dir = Offset(math.sin(ang), -math.cos(ang));
+      final isNow = b == nowBranch;
+      final tp = TextPainter(
+        text: TextSpan(
+          text: BeidouBackground.shichenChars[b],
+          style: TextStyle(
+            fontSize: isNow ? 11.5 : 9.5,
+            fontWeight: isNow ? FontWeight.w700 : FontWeight.w500,
+            color: isNow
+                ? const Color(0xFFFFD873)
+                : LingShuColors.paper.withValues(alpha: 0.40),
+          ),
         ),
-      ),
-      textDirection: TextDirection.ltr,
-    )..layout();
-    final c = pole + dir * (orbitR * 0.34);
-    tp.paint(canvas, c - Offset(tp.width / 2, tp.height / 2));
+        textDirection: TextDirection.ltr,
+      )..layout();
+      final center = pole + dir * (orbitR * 0.352);
+      canvas.save();
+      canvas.translate(center.dx, center.dy);
+      canvas.rotate(ang); // 罗盘式：顶部正立、两侧竖排、底部倒立
+      tp.paint(canvas, Offset(-tp.width / 2, -tp.height / 2));
+      canvas.restore();
+    }
   }
 
   /// 方位标注：轨道外四正位——上南、下北、左东、右西（传统式盘方位，

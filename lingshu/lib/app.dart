@@ -72,8 +72,18 @@ GoRouter buildRouter(WidgetRef ref) {
         path: '/records/import',
         builder: (c, s) => const RecordImportPage(),
       ),
-      // AI 原生入口（体验版）：独立开发中，暂不作为默认首页
-      GoRoute(path: '/ai', builder: (c, s) => const AiHomePage()),
+      // AI 原生入口（体验版）：独立开发中，暂不作为默认首页。
+      // page key 绑定会话代次：入口点击 bump 一次，强制全新 State——
+      // 每次打开都是收起的历史 + 干净的新会话视图
+      GoRoute(
+        path: '/ai',
+        pageBuilder: (c, s) => CustomTransitionPage(
+          key: ValueKey('ai-${ref.read(aiSessionProvider)}'),
+          child: const AiHomePage(),
+          transitionsBuilder: (c, animation, secondary, child) =>
+              FadeTransition(opacity: animation, child: child),
+        ),
+      ),
       GoRoute(
         path: '/records/:id',
         builder: (c, s) =>

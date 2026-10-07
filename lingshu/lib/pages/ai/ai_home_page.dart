@@ -6,11 +6,13 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:record/record.dart';
 
 import '../../core/services/agent_capabilities.dart';
 import '../../core/services/agent_service.dart';
+import '../../core/services/ai_history_store.dart';
 import '../../core/theme.dart';
 import '../../providers.dart';
 import 'beidou_background.dart';
@@ -18,6 +20,8 @@ import 'beidou_background.dart';
 /// AI 原生入口（体验版）：北斗呼吸星野 + 单一输入框 + 呼吸语音球。
 /// 文本/多图/语音进，智能体自动分派到 app 全部能力：归档/查指标/记指标/用药/
 /// 档案/概览/体质/药箱/急救/中药/穴位/节气，其余由大模型直接作答。
+/// 会话历史落盘（ai_history_store）：每次打开默认收起，点历史条展开，
+/// 头部按钮清空（需确认）；不点清空绝不丢历史。
 /// 经典界面不受影响（我的 → AI 健康管家 进入本页）。
 class AiHomePage extends ConsumerStatefulWidget {
   const AiHomePage({super.key});
@@ -31,6 +35,7 @@ class _Msg {
   final List<String> imagePaths; // 用户附带照片（缩略展示）
   final bool user;
   final Uint8List? chart; // 助手返回的趋势图
+  final String? chartPath; // 图表落盘路径（持久化用）
   final String? chartTitle;
   final List<AgentCapability> capabilities; // 能力点选列表（问「你能做什么」时）
   final String? route; // 可跳转的 app 内页面
@@ -41,6 +46,7 @@ class _Msg {
     this.imagePaths = const [],
     required this.user,
     this.chart,
+    this.chartPath,
     this.chartTitle,
     this.capabilities = const [],
     this.route,
@@ -62,13 +68,73 @@ class _AiHomePageState extends ConsumerState<AiHomePage>
   final _attached = <String>[]; // 待发送图片路径
   final _msgs = <_Msg>[];
 
+  /// 历史收起态：每次打开页面默认收起（page key 每次入口点击都更换，
+  /// State 必为新建）；新提问或点历史条才展开。收起 ≠ 删除，历史落盘。
+  bool _historyCollapsed = true;
   bool _sending = false;
   bool _recording = false;
   bool _asrBusy = false; // 停止录音后的转写阶段
   final _recorder = AudioRecorder();
 
+  late final AiHistoryStore _histStore;
+
   static const _gold = LingShuColors.gold;
   static const _paper = Color(0xFFF8F4EB);
+
+  @override
+  void initState() {
+    super.initState();
+    _histStore = AiHistoryStore(dir: () async {
+      final docs = await getApplicationDocumentsDirectory();
+      return Directory(p.join(docs.path, 'ai_history'));
+    });
+    _loadHistory();
+  }
+
+  /// 从磁盘加载历史（最新在前）；读失败当作无历史，绝不动原文件
+  Future<void> _loadHistory() async {
+    try {
+      final entries = await _histStore.load();
+      if (entries.isEmpty || !mounted) return;
+      setState(() {
+        // 追加在既有消息之后（正常为空；极早发送时新消息仍在顶部）
+        _msgs.addAll([
+          for (final e in entries)
+            _Msg(
+              text: e.text,
+              imagePaths: e.imagePaths,
+              user: e.user,
+              chart: e.chartPath == null
+                  ? null
+                  : File(e.chartPath!).readAsBytesSync(),
+              chartPath: e.chartPath,
+              chartTitle: e.chartTitle,
+            ),
+        ]);
+      });
+    } catch (e) {
+      debugPrint('[ai] load history failed: $e');
+    }
+  }
+
+  /// 会话落盘（过滤思考中占位；最新在前）。失败仅记日志，不打扰会话。
+  Future<void> _persist() async {
+    try {
+      await _histStore.save([
+        for (final m in _msgs)
+          if (!m.pending)
+            AiHistoryEntry(
+              user: m.user,
+              text: m.text,
+              imagePaths: m.imagePaths,
+              chartPath: m.chartPath,
+              chartTitle: m.chartTitle,
+            ),
+      ]);
+    } catch (e) {
+      debugPrint('[ai] persist history failed: $e');
+    }
+  }
 
   @override
   void dispose() {
@@ -102,10 +168,13 @@ class _AiHomePageState extends ConsumerState<AiHomePage>
   Future<void> _dispatch(String text, List<String> imagePaths) async {
     if (_sending) return;
     setState(() {
+      // 新提问即展开会话视图（含收起中的历史）
+      _historyCollapsed = false;
       _msgs.insert(0, _Msg(text: text, imagePaths: imagePaths, user: true));
       _msgs.insert(0, _Msg(user: false, pending: true));
       _sending = true;
     });
+    _persist();
     try {
       final ocr = await ref.read(aiConfigProvider.future);
       final agent = AgentService(
@@ -126,10 +195,14 @@ class _AiHomePageState extends ConsumerState<AiHomePage>
         imagePaths: imagePaths,
         metricNames: [for (final m in metrics) m.name],
       );
+      // 趋势图落盘，历史回看才有图（原图表 PNG 只在内存）
+      final chartPath =
+          r.chart == null ? null : await _histStore.saveChart(r.chart!);
       setState(() => _msgs[0] = _Msg(
           text: r.text,
           user: false,
           chart: r.chart,
+          chartPath: chartPath,
           chartTitle: r.chartTitle,
           capabilities: r.capabilities,
           route: r.route,
@@ -137,8 +210,42 @@ class _AiHomePageState extends ConsumerState<AiHomePage>
     } catch (e) {
       setState(() => _msgs[0] = _Msg(text: '出了点问题：$e', user: false));
     } finally {
-      if (mounted) setState(() => _sending = false);
+      if (mounted) {
+        setState(() => _sending = false);
+        _persist();
+      }
     }
+  }
+
+  // ── 清空历史：唯一删除入口，需确认；不点不删 ──
+
+  Future<void> _confirmClear() async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (c) => AlertDialog(
+        title: const Text('清空历史记录'),
+        content: Text('将删除全部 ${_msgs.length} 条会话消息（含趋势图），'
+            '删除后不可恢复。'),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(c, false),
+              child: const Text('取消')),
+          FilledButton(
+            style: FilledButton.styleFrom(
+                backgroundColor: LingShuColors.danger),
+            onPressed: () => Navigator.pop(c, true),
+            child: const Text('清空'),
+          ),
+        ],
+      ),
+    );
+    if (ok != true || !mounted) return;
+    setState(() {
+      _msgs.clear();
+      _historyCollapsed = true;
+    });
+    await _histStore.clear();
+    _persist();
   }
 
   // ── 图片附件 ──
@@ -209,6 +316,22 @@ class _AiHomePageState extends ConsumerState<AiHomePage>
         .showSnackBar(SnackBar(content: Text(msg), width: 340));
   }
 
+  /// 子午流注读数：当前时辰 · 当令经 · 养生提示。
+  /// 数据源 ContentRepo.shichen（solar_terms.json），main 启动时已预加载。
+  String _shichenTip() {
+    final s = BeidouBackground.shichenOf(DateTime.now()); // 如「戌时」
+    final branch = s.substring(0, s.length - 1);
+    final hit = ref
+        .read(contentProvider)
+        .shichen
+        .where((e) => e.branch == branch)
+        .firstOrNull;
+    if (hit == null) return s;
+    final tip =
+        hit.tip.endsWith('。') ? hit.tip.substring(0, hit.tip.length - 1) : hit.tip;
+    return '$s · ${hit.meridian} · $tip';
+  }
+
   // ── UI ──
 
   @override
@@ -230,7 +353,12 @@ class _AiHomePageState extends ConsumerState<AiHomePage>
               child: Column(
                 children: [
                   _header(),
-                  Expanded(child: _msgs.isEmpty ? _idleView() : _chatView()),
+                  Expanded(
+                    // 收起时回到空闲视图（历史不显示但保留），新会话直接开始
+                    child: (_msgs.isEmpty || _historyCollapsed)
+                        ? _idleView()
+                        : _chatView(),
+                  ),
                   _inputArea(),
                   _orbButton(),
                   const SizedBox(height: 10),
@@ -266,6 +394,14 @@ class _AiHomePageState extends ConsumerState<AiHomePage>
                     fontSize: 10, letterSpacing: 2, color: _paper.withValues(alpha: 0.55))),
           ]),
           const Spacer(),
+          // 清空历史：唯一删除入口（有历史时才出现，点击需确认）
+          if (_msgs.isNotEmpty)
+            IconButton(
+              tooltip: '清空历史记录',
+              icon: Icon(Icons.delete_sweep_outlined,
+                  size: 21, color: _paper.withValues(alpha: 0.8)),
+              onPressed: _confirmClear,
+            ),
           IconButton(
             tooltip: 'AI 设置',
             icon: Icon(Icons.settings_outlined,
@@ -454,18 +590,54 @@ class _AiHomePageState extends ConsumerState<AiHomePage>
     return Padding(
       padding: const EdgeInsets.fromLTRB(14, 4, 14, 0),
       child: Column(children: [
-        // 空闲态标语：贴在快捷按钮上方一点点
-        if (_msgs.isEmpty) ...[
+        // 空闲态标语：贴在快捷按钮上方一点点（历史收起时同属"新会话"观感）
+        if (_msgs.isEmpty || _historyCollapsed) ...[
           Text('一句话，我替你打理健康档案',
               style: const TextStyle(
                   fontSize: 15,
                   letterSpacing: 2,
                   color: _paper,
                   fontFamily: 'SerifSC')),
+          const SizedBox(height: 5),
+          // 子午流注读数：当前时辰 · 当令经 · 养生提示（ContentRepo.shichen
+          // 此前只在数据层从未上界面）
+          Text(_shichenTip(),
+              style: TextStyle(
+                  fontSize: 11.5,
+                  letterSpacing: 1,
+                  color: _paper.withValues(alpha: 0.55))),
           const SizedBox(height: 8),
         ],
-        // 快捷功能：贴在输入框上方（仅空闲无会话时显示），可换行不超屏
-        if (_msgs.isEmpty)
+        // 历史收起提示条：历史在但不显示，点按展开（不点不删）
+        if (_historyCollapsed && _msgs.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 6),
+            child: GestureDetector(
+              onTap: () => setState(() => _historyCollapsed = false),
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.14),
+                  borderRadius: BorderRadius.circular(20),
+                  border:
+                      Border.all(color: Colors.white.withValues(alpha: 0.30)),
+                ),
+                child: Row(mainAxisSize: MainAxisSize.min, children: [
+                  Icon(Icons.history,
+                      size: 15, color: Colors.white.withValues(alpha: 0.75)),
+                  const SizedBox(width: 7),
+                  Text('历史会话 ${_msgs.length} 条 · 点击展开',
+                      style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white.withValues(alpha: 0.9))),
+                ]),
+              ),
+            ),
+          ),
+        // 快捷功能：贴在输入框上方（空闲无会话或历史收起时显示），可换行不超屏
+        if (_msgs.isEmpty || _historyCollapsed)
           Padding(
             padding: const EdgeInsets.only(bottom: 6),
             child: Wrap(

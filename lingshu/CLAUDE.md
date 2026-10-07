@@ -25,7 +25,7 @@
 - **二级路由**：`/onboarding`、`/lock`、`/records/import`（拍照导入）、`/records/:id`（档案详情）、`/metrics/:id`（指标趋势图）、`/family` 与 `/family/edit?id=&first=1`（成员档案）、`/medications` 与 `/medications/edit?id=`（用药）、`/settings`、`/backup`（备份恢复）、`/constitution`（体质辨识）、`/box`（家庭药箱）、`/firstaid/:id`（急救场景）、`/ai`（AI 原生入口·体验版，由「我的」页进入）。
 - **注意**：中药图鉴三个页面（`pages/herb/`）**不在 go_router 中注册**，由铜人页等处 `Navigator.push` 直跳。
 
-## lib/ 目录职责（共 56 个 .dart 文件）
+## lib/ 目录职责（共 57 个 .dart 文件）
 
 ```
 lib/
@@ -49,6 +49,7 @@ lib/
 │       ├── notification_service.dart 用药提醒 + 药箱到期（6/3/1 月前+过期后每日）
 │       ├── asr_service.dart          语音转写（OpenAI 兼容 /audio/transcriptions）+ 口述血压/心率解析
 │       ├── agent_capabilities.dart   AI 管家能力目录（13 项，会话点选列表与路由提示词共用）+「你能做什么」问句本地识别
+│       ├── ai_history_store.dart     AI 管家会话历史落盘（ai_history/messages.json + 趋势图 PNG；损坏当无历史绝不清文件；上限 300 条）
 │       ├── agent_service.dart        AI 管家：意图路由（15 个动作：归档/查指标/记指标/用药增停查/档案/概览/体质/药箱/急救/中药/穴位/节气/导航）+ 无头归档管线 + 趋势图离屏渲染（Canvas→PNG）
 │       ├── ocr_service.dart          视觉大模型 OCR（OpenAI 兼容 /chat/completions），OcrResult/OcrMetric/MetricMergeGroup 指标合并
 │       └── weather_service.dart      Open-Meteo 免 Key 天气（节气卡片用）

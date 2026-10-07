@@ -79,7 +79,7 @@ class ProfilePage extends ConsumerWidget {
               ]),
           ),
           const SizedBox(height: 16),
-          _aiEntry(context),
+          _aiEntry(context, ref),
           const SizedBox(height: 12),
           if (profiles.length > 1)
             SizedBox(
@@ -147,7 +147,7 @@ class ProfilePage extends ConsumerWidget {
   }
 
   /// AI 原生入口（体验版）：玄色卡面呼应 AI 页的北斗星野
-  Widget _aiEntry(BuildContext context) {
+  Widget _aiEntry(BuildContext context, WidgetRef ref) {
     return Card(
       clipBehavior: Clip.antiAlias,
       elevation: 0,
@@ -157,7 +157,12 @@ class ProfilePage extends ConsumerWidget {
       ),
       color: LingShuColors.stageTop,
       child: InkWell(
-        onTap: () => context.push('/ai'),
+        // 递增会话代次作 /ai 的 page key：每次打开都是全新会话视图
+        //（历史落盘保留、默认收起；见 ai_history_store）
+        onTap: () {
+          ref.read(aiSessionProvider.notifier).state++;
+          context.push('/ai');
+        },
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           child: Row(children: [

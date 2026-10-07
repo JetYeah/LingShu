@@ -133,6 +133,28 @@ void main() {
     expect(BeidouBackground.shichenOf(DateTime(2026, 10, 6, 13)), '未时');
   });
 
+  test('地支标注对齐：各支画在自身时辰扇区中心（= 偶数整点刻度角），'
+      '时针在扇区内', () {
+    final t = DateTime(2026, 10, 6, 19, 30); // 戌时中段
+    final b = ((t.hour + 1) % 24) ~/ 2; // 戌 = 10
+    expect(BeidouBackground.shichenChars[b], '戌');
+    // 扇区中心角 = 偶数整点 2b 的刻度角（painter 用同一公式画字）
+    final center = BeidouBackground.hourTickAngle(t, 2 * b);
+    final start = BeidouBackground.hourTickAngle(t, 2 * b - 1);
+    final end = BeidouBackground.hourTickAngle(t, 2 * b + 1);
+    // 中心角落在扇区起止之间（跨 0° 环绕处理：顺时针差值）
+    double cw(double from, double to) => ((to - from) % 360 + 360) % 360;
+    expect(cw(start, center), closeTo(15, 0.001),
+        reason: '扇区中心应在起点顺时针 15°');
+    expect(cw(center, end), closeTo(15, 0.001),
+        reason: '扇区终点应在中心顺时针 15°');
+    // 天枢虚线（时针，连续角）落在戌扇区内：起点顺时针 7.5° 处
+    // （19:30 = 进入戌时 30 分钟，每分钟 0.25°）
+    final hand = BeidouAstronomy.dubheAngle(t);
+    expect(cw(start, hand), closeTo(7.5, 0.5),
+        reason: '19:30 的时针应在戌扇区开头 7.5° 附近');
+  });
+
   test('布局间距：北斗内缘（天枢）与节气环文字外缘留有净空', () {
     // 复刻 painter 几何常量（720×1600 参考画布）：北斗外扩 1.08、
     // 节气环 0.50、文字外缘 = 环 + 14 偏移 + 字高
