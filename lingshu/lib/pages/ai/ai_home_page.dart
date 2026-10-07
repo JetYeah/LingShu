@@ -9,14 +9,16 @@ import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:record/record.dart';
 
+import '../../core/services/agent_capabilities.dart';
 import '../../core/services/agent_service.dart';
 import '../../core/theme.dart';
 import '../../providers.dart';
 import 'beidou_background.dart';
 
 /// AI 原生入口（体验版）：北斗呼吸星野 + 单一输入框 + 呼吸语音球。
-/// 文本/多图/语音进，智能体自动分派：归档病历 → 档案库；查指标 → 统计+趋势图；
-/// 其余 → 大模型直接作答。经典界面不受影响（我的 → AI 健康助手 进入本页）。
+/// 文本/多图/语音进，智能体自动分派到 app 全部能力：归档/查指标/记指标/用药/
+/// 档案/概览/体质/药箱/急救/中药/穴位/节气，其余由大模型直接作答。
+/// 经典界面不受影响（我的 → AI 健康管家 进入本页）。
 class AiHomePage extends ConsumerStatefulWidget {
   const AiHomePage({super.key});
 
@@ -30,6 +32,9 @@ class _Msg {
   final bool user;
   final Uint8List? chart; // 助手返回的趋势图
   final String? chartTitle;
+  final List<AgentCapability> capabilities; // 能力点选列表（问「你能做什么」时）
+  final String? route; // 可跳转的 app 内页面
+  final String? routeLabel;
   final bool pending; // 助手思考中
   _Msg({
     this.text = '',
@@ -37,6 +42,9 @@ class _Msg {
     required this.user,
     this.chart,
     this.chartTitle,
+    this.capabilities = const [],
+    this.route,
+    this.routeLabel,
     this.pending = false,
   });
 }
@@ -77,16 +85,34 @@ class _AiHomePageState extends ConsumerState<AiHomePage>
   Future<void> _send() async {
     final text = _input.text.trim();
     if (_sending || (text.isEmpty && _attached.isEmpty)) return;
+    final images = [..._attached];
     setState(() {
-      _msgs.insert(0, _Msg(text: text, imagePaths: [..._attached], user: true));
-      _msgs.insert(0, _Msg(user: false, pending: true));
       _input.clear();
       _attached.clear();
+    });
+    await _dispatch(text, images);
+  }
+
+  /// 能力点选：示例指令直接发送
+  Future<void> _sendCapability(AgentCapability cap) async {
+    if (_sending) return;
+    await _dispatch(cap.example, const []);
+  }
+
+  Future<void> _dispatch(String text, List<String> imagePaths) async {
+    if (_sending) return;
+    setState(() {
+      _msgs.insert(0, _Msg(text: text, imagePaths: imagePaths, user: true));
+      _msgs.insert(0, _Msg(user: false, pending: true));
       _sending = true;
     });
     try {
       final ocr = await ref.read(aiConfigProvider.future);
-      final agent = AgentService(ocr: ocr);
+      final agent = AgentService(
+        ocr: ocr,
+        notifications: ref.read(notificationServiceProvider),
+        content: ref.read(contentProvider),
+      );
       final db = ref.read(dbProvider);
       final profileId = ref.read(currentProfileIdProvider);
       if (profileId == null) throw Exception('请先建立家庭成员档案');
@@ -97,11 +123,17 @@ class _AiHomePageState extends ConsumerState<AiHomePage>
         db: db,
         profileId: profileId,
         message: text,
-        imagePaths: _msgs[1].imagePaths, // 刚才那条用户消息里的图
+        imagePaths: imagePaths,
         metricNames: [for (final m in metrics) m.name],
       );
       setState(() => _msgs[0] = _Msg(
-          text: r.text, user: false, chart: r.chart, chartTitle: r.chartTitle));
+          text: r.text,
+          user: false,
+          chart: r.chart,
+          chartTitle: r.chartTitle,
+          capabilities: r.capabilities,
+          route: r.route,
+          routeLabel: r.routeLabel));
     } catch (e) {
       setState(() => _msgs[0] = _Msg(text: '出了点问题：$e', user: false));
     } finally {
@@ -229,7 +261,7 @@ class _AiHomePageState extends ConsumerState<AiHomePage>
                     color: _paper,
                     fontFamily: 'SerifSC')),
             const SizedBox(height: 2),
-            Text('归档 · 问询 · 问答',
+            Text('档案 · 指标 · 用药 · 百科 · 急救',
                 style: TextStyle(
                     fontSize: 10, letterSpacing: 2, color: _paper.withValues(alpha: 0.55))),
           ]),
@@ -317,6 +349,77 @@ class _AiHomePageState extends ConsumerState<AiHomePage>
             Text(m.text,
                 style: const TextStyle(
                     fontSize: 14, height: 1.55, color: _paper)),
+          // 能力点选列表（问「你能做什么」时）：点一行直接替用户发出示例指令
+          if (m.capabilities.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            for (final cap in m.capabilities)
+              GestureDetector(
+                onTap: () => _sendCapability(cap),
+                child: Container(
+                  margin: const EdgeInsets.only(bottom: 6),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 10, vertical: 9),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(12),
+                    border:
+                        Border.all(color: Colors.white.withValues(alpha: 0.14)),
+                  ),
+                  child: Row(children: [
+                    Text(cap.emoji, style: const TextStyle(fontSize: 17)),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(cap.title,
+                              style: const TextStyle(
+                                  fontSize: 13.5,
+                                  fontWeight: FontWeight.w600,
+                                  color: _paper)),
+                          const SizedBox(height: 2),
+                          Text(cap.desc,
+                              style: TextStyle(
+                                  fontSize: 11,
+                                  height: 1.3,
+                                  color: _paper.withValues(alpha: 0.55))),
+                        ],
+                      ),
+                    ),
+                    Icon(Icons.arrow_outward,
+                        size: 15, color: _paper.withValues(alpha: 0.4)),
+                  ]),
+                ),
+              ),
+          ],
+          if (m.route != null && m.routeLabel != null) ...[
+            const SizedBox(height: 6),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: GestureDetector(
+                onTap: () => context.push(m.route!),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 14, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: _gold.withValues(alpha: 0.18),
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(color: _gold.withValues(alpha: 0.5)),
+                  ),
+                  child: Row(mainAxisSize: MainAxisSize.min, children: [
+                    Icon(Icons.open_in_new,
+                        size: 13, color: _gold.withValues(alpha: 0.9)),
+                    const SizedBox(width: 6),
+                    Text('打开 · ${m.routeLabel}',
+                        style: TextStyle(
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w600,
+                            color: _gold.withValues(alpha: 0.95))),
+                  ]),
+                ),
+              ),
+            ),
+          ],
           if (m.chart != null) ...[
             const SizedBox(height: 10),
             GestureDetector(
@@ -370,8 +473,10 @@ class _AiHomePageState extends ConsumerState<AiHomePage>
               runSpacing: 8,
               children: [
                 for (final (emoji, text) in const [
+                  ('🏥', '我的健康概览'),
                   ('📊', '看看最近7天的血糖'),
                   ('🗂', '帮我把这张病历归档'),
+                  ('✨', '你能帮我做什么'),
                 ])
                   // 自绘胶囊而非 ActionChip：应用主题会把 chip 背景强制成
                   // 不透明 surface（白色），白字落在白底上会隐形（真机踩坑）
@@ -455,7 +560,7 @@ class _AiHomePageState extends ConsumerState<AiHomePage>
                 decoration: InputDecoration(
                   border: InputBorder.none,
                   isDense: true,
-                  hintText: '传病历照片归档 / 查指标 / 提问…',
+                  hintText: '健康事务一句话：记录 · 查询 · 归档 · 百科…',
                   hintStyle: TextStyle(
                       color: LingShuColors.inkSoft.withValues(alpha: 0.85),
                       fontSize: 13.5),
