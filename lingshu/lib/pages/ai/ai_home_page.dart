@@ -481,10 +481,31 @@ class _AiHomePageState extends ConsumerState<AiHomePage>
                   style: TextStyle(
                       fontSize: 12.5, color: _paper.withValues(alpha: 0.6))),
             ])
-          else if (m.text.isNotEmpty)
+          else if (m.text.isNotEmpty) ...[
             Text(m.text,
                 style: const TextStyle(
                     fontSize: 14, height: 1.55, color: _paper)),
+            // 一键复制：AI 回答常含需要留存的内容（指标解读、用药建议等）
+            if (!m.user)
+              Align(
+                alignment: Alignment.centerRight,
+                child: GestureDetector(
+                  onTap: () => _copyText(m.text),
+                  child: Padding(
+                    padding: const EdgeInsets.only(top: 6),
+                    child: Row(mainAxisSize: MainAxisSize.min, children: [
+                      Icon(Icons.copy_rounded,
+                          size: 12.5, color: _paper.withValues(alpha: 0.5)),
+                      const SizedBox(width: 4),
+                      Text('复制',
+                          style: TextStyle(
+                              fontSize: 11,
+                              color: _paper.withValues(alpha: 0.55))),
+                    ]),
+                  ),
+                ),
+              ),
+          ],
           // 能力点选列表（问「你能做什么」时）：点一行直接替用户发出示例指令
           if (m.capabilities.isNotEmpty) ...[
             const SizedBox(height: 10),
@@ -570,7 +591,18 @@ class _AiHomePageState extends ConsumerState<AiHomePage>
         ],
       ),
     );
-    return bubble;
+    // 长按任意有文字的气泡也可复制（显式按钮之外的兜底，双保险）
+    return GestureDetector(
+      onLongPress:
+          m.pending || m.text.isEmpty ? null : () => _copyText(m.text),
+      child: bubble,
+    );
+  }
+
+  void _copyText(String text) {
+    Clipboard.setData(ClipboardData(text: text));
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('已复制到剪贴板'), width: 220, duration: Duration(seconds: 2)));
   }
 
   void _showChart(_Msg m) {

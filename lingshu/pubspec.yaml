@@ -62,6 +62,8 @@ dev_dependencies:
   flutter_lints: ^6.0.0
   drift_dev: ^2.28.1
   build_runner: ^2.5.4
+  # 仅测试用：med_schedule_test 直接引平台接口包注册 mock 平台实例
+  flutter_local_notifications_platform_interface: ^8.0.0
 
 flutter:
   uses-material-design: true

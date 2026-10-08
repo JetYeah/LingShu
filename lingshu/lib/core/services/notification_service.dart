@@ -1,7 +1,21 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/data/latest.dart' as tzdata;
 import 'package:timezone/timezone.dart' as tz;
+
+/// 用药提醒排程结果：给调用方如实反馈「提醒到底设上没有」
+class MedScheduleResult {
+  final int scheduled; // 成功排上的未来通知条数（0=一条都没排上）
+  final bool exact; // true=精确闹钟；false=本机未授「闹钟和提醒」，已降级非精确（触发可能延迟数分钟）
+  final bool notificationsAllowed; // 系统通知权限（false=排了也不显示）
+  const MedScheduleResult({
+    required this.scheduled,
+    required this.exact,
+    required this.notificationsAllowed,
+  });
+}
 
 /// 本地通知（用药提醒）
 class NotificationService {
@@ -13,7 +27,6 @@ class NotificationService {
     tzdata.initializeTimeZones();
     // 中国无夏令时，固定为东八区
     tz.setLocalLocation(tz.getLocation('Asia/Shanghai'));
-
     const androidInit = AndroidInitializationSettings('@mipmap/ic_launcher');
     const iosInit = DarwinInitializationSettings(
       requestAlertPermission: true,
@@ -26,7 +39,10 @@ class NotificationService {
     final android = _plugin.resolvePlatformSpecificImplementation<
         AndroidFlutterLocalNotificationsPlugin>();
     await android?.requestNotificationsPermission();
-    await android?.requestExactAlarmsPermission();
+    // 不在这里 requestExactAlarmsPermission：未授权时插件会强跳系统
+    // 「闹钟和提醒」设置页，启动重排也会走 init → 每次开 App 都被弹走。
+    // 精确闹钟引导只在用药保存流程做（保存反馈里带「去开启」）；
+    // 未授权时排程已降级非精确，提醒仍然生效。
     await android?.createNotificationChannel(
       const AndroidNotificationChannel(
         'lingshu_med',
@@ -58,12 +74,41 @@ class NotificationService {
     iOS: DarwinNotificationDetails(),
   );
 
+  static const _alarmChannel = MethodChannel('lingshu/alarm');
+
+  /// 引导用户去系统设置开通知（通知权限被永久拒绝时系统弹窗不再出现，
+  /// 只能从应用设置进入）。失败静默——仅是引导路径，不影响主流程
+  Future<void> openNotificationSettings() async {
+    try {
+      await _alarmChannel.invokeMethod('openNotificationSettings');
+    } catch (e) {
+      debugPrint('[notify] open settings failed: $e');
+    }
+  }
+
+  /// 引导开启「闹钟和提醒」（精确闹钟）：插件跳系统授权页，开启后下次重排生效
+  Future<void> requestExactAlarmPermission() async {
+    try {
+      await _plugin
+          .resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin>()
+          ?.requestExactAlarmsPermission();
+    } catch (e) {
+      debugPrint('[notify] request exact alarm permission failed: $e');
+    }
+  }
+
 
   /// 窗口式逐日调度：为未来 60 天内每个符合条件的日期×时间点建一次性通知。
   /// 条件 = 周几选中 ∩ 服用区间内 ∩ 不在暂停时段。
   /// （周重复式通知无法表达开始/结束日期与暂停，故改为滚动窗口 +
   ///  打开用药页/App 启动时重排）
-  Future<void> rescheduleMedication({
+  ///
+  /// 权限降级：targetSdk≥35 时 Android 14+ 默认不授 SCHEDULE_EXACT_ALARM，
+  /// 精确排程会直接抛异常（此前被调用方吞掉→用户以为设好了实际一条没排）。
+  /// 现查 canScheduleExactNotifications，未授权时降级 inexactAllowWhileIdle
+  /// 继续排（Doze 下触发可能延迟数分钟），绝不因权限让提醒归零。
+  Future<MedScheduleResult> rescheduleMedication({
     required int medicationId,
     required List<String> times,
     required Set<int> days, // Dart weekday；空=每天
@@ -74,11 +119,20 @@ class NotificationService {
     required String body,
   }) async {
     await init();
+    final android = _plugin.resolvePlatformSpecificImplementation<
+        AndroidFlutterLocalNotificationsPlugin>();
+    final notificationsAllowed =
+        await android?.areNotificationsEnabled() ?? true;
+    final exact = await android?.canScheduleExactNotifications() ?? true;
+    final mode = exact
+        ? AndroidScheduleMode.exactAllowWhileIdle
+        : AndroidScheduleMode.inexactAllowWhileIdle;
     await cancelForMedication(medicationId, slots: times.length);
     final effective = days.isEmpty ? {1, 2, 3, 4, 5, 6, 7} : days;
     DateTime ds(DateTime d) => DateTime(d.year, d.month, d.day);
     final today = ds(DateTime.now());
     final now = tz.TZDateTime.now(tz.local);
+    var scheduled = 0;
     for (var offset = 0; offset < 60; offset++) {
       final d = today.add(Duration(days: offset));
       if (!effective.contains(d.weekday)) continue;
@@ -92,18 +146,30 @@ class NotificationService {
         final when = tz.TZDateTime(
             tz.local, d.year, d.month, d.day, int.parse(parts[0]), int.parse(parts[1]));
         if (!when.isAfter(now)) continue;
-        await _plugin.zonedSchedule(
-          _windowId(medicationId, slot, offset),
-          title,
-          body,
-          when,
-          _details,
-          androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-          uiLocalNotificationDateInterpretation:
-              UILocalNotificationDateInterpretation.absoluteTime,
-        );
+        try {
+          await _plugin.zonedSchedule(
+            _windowId(medicationId, slot, offset),
+            title,
+            body,
+            when,
+            _details,
+            androidScheduleMode: mode,
+            uiLocalNotificationDateInterpretation:
+                UILocalNotificationDateInterpretation.absoluteTime,
+          );
+          scheduled++;
+        } catch (e) {
+          // 单条失败不拖垮整个窗口（部分 ROM 逐条偶发），计数留给调用方反馈
+          debugPrint(
+              '[notify] schedule med=$medicationId slot=$slot day=$offset failed: $e');
+        }
       }
     }
+    return MedScheduleResult(
+      scheduled: scheduled,
+      exact: exact,
+      notificationsAllowed: notificationsAllowed,
+    );
   }
 
   /// 窗口式通知 id：medId*1e6 + slot*1e3 + 天偏移(0..59)，与历史两代 id 段不重叠

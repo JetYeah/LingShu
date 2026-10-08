@@ -207,8 +207,11 @@ class _MedEditPageState extends ConsumerState<MedEditPage> {
       // zonedSchedule 会抛异常，不接住的话 Navigator.pop 永远到不了，
       // 页面就停在编辑页（数据其实已落库）。兜底：App 启动/回本页时会
       // 对全部在用药物整体重排，错过这次也会补上。
+      //
+      // 排程结果必须如实反馈：「保存成功」≠「提醒设上了」——通知权限被拒时
+      // 排了也不显示；精确闹钟未授权时此前会整窗归零（服务层已降级非精确）。
       try {
-        await notif.rescheduleMedication(
+        final r = await notif.rescheduleMedication(
           medicationId: medId,
           times: times,
           days: daysSet,
@@ -218,6 +221,18 @@ class _MedEditPageState extends ConsumerState<MedEditPage> {
           title: '灵枢 · 用药提醒',
           body: '${_name.text.trim()}${_dosage.text.isNotEmpty ? '（${_dosage.text}）' : ''} · ${_mealRelation}服用',
         );
+        if (!r.notificationsAllowed) {
+          _toastAction('已保存，但没有通知权限，提醒不会显示——点击开启', () async {
+            await ref.read(notificationServiceProvider).openNotificationSettings();
+          });
+        } else if (r.scheduled == 0) {
+          _toast('已保存。所选时段今天都已过去或不在服用区间，从下一个符合的日子开始提醒');
+        } else if (!r.exact) {
+          _toastAction('已保存 · 已排 ${r.scheduled} 条提醒。本机未开「闹钟和提醒」，触发可能延迟数分钟',
+              () => ref.read(notificationServiceProvider).requestExactAlarmPermission());
+        } else {
+          _toast('已保存 · 已排 ${r.scheduled} 条提醒');
+        }
       } catch (e) {
         debugPrint('[med] reschedule failed: $e');
         _toast('已保存，但提醒重排未完成：$e');
@@ -363,6 +378,20 @@ class _MedEditPageState extends ConsumerState<MedEditPage> {
   void _toast(String msg) {
     ScaffoldMessenger.of(context)
         .showSnackBar(SnackBar(content: Text(msg), width: 320));
+  }
+
+  /// 带动作的提示（如「点击开启」跳系统设置）：pop 后仍在，root messenger 常驻
+  void _toastAction(String msg, Future<void> Function() action) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(msg),
+      width: 340,
+      duration: const Duration(seconds: 6),
+      action: SnackBarAction(
+          label: '去开启',
+          onPressed: () {
+            action();
+          }),
+    ));
   }
 
   Widget _photoSection() => Column(
