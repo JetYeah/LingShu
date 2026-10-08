@@ -275,6 +275,7 @@ class _ChartPainter extends CustomPainter {
 
     // 身体轮廓：暗面填充 + 金色发丝边
     final outline = (v['outline'] as List).cast<dynamic>();
+    Path? bodyPath;
     if (outline.isNotEmpty) {
       final path = Path();
       for (var i = 0; i < outline.length; i++) {
@@ -301,14 +302,21 @@ class _ChartPainter extends CustomPainter {
             ..style = PaintingStyle.stroke
             ..strokeWidth = 1
             ..color = LingShuColors.gold.withValues(alpha: 0.35));
+      bodyPath = path;
     }
 
     // 红色经络线：细线 + 样条平滑（选定经络加亮，其余半透明；定位态下再压一档）
     // 奇经八脉为朱砂红且第二遍再画：冲带跷维六脉与十二正经高度重叠（共享交会穴），
     // 同色同层时完全被盖住，肉眼只见任督两条正中线
+    // 全部裁剪在身体剪影内：样条在颈肩等急拐角会过冲甩出轮廓（选中加粗时尤甚），
+    // 侧视带脉绕腰一整圈、投影环也超出剪影
     final lw = (1.5 / scale).clamp(0.55, 2.0);
     final lineDimBase = spotlight == null ? 0.15 : 0.06;
     final lines = (v['lines'] as List).cast<Map<String, dynamic>>();
+    if (bodyPath != null) {
+      canvas.save();
+      canvas.clipPath(bodyPath);
+    }
     for (final isExtra in [false, true]) {
       for (final line in lines) {
         final m = line['m'] as String;
@@ -333,6 +341,7 @@ class _ChartPainter extends CustomPainter {
         }
       }
     }
+    if (bodyPath != null) canvas.restore();
 
     // 金色穴位点 + 选中态（半径随缩放反向补偿：放大时点距拉开而点不长大）
     // 定位态：目标穴闪烁高亮 + 名牌，其余穴位变暗灰点
