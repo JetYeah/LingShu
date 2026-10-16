@@ -234,7 +234,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
     // 防止重复提交创建多个主人档案
     if (auth.onboarded) {
       ref.read(sessionProvider.notifier).finishOnboarding();
-      if (mounted) context.go('/home');
+      if (mounted) context.go('/ai');
       return;
     }
     setState(() => _saving = true);
@@ -274,7 +274,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
             ));
       }
       ref.read(sessionProvider.notifier).finishOnboarding();
-      if (mounted) context.go('/home');
+      if (mounted) context.go('/ai');
     } finally {
       if (mounted) setState(() => _saving = false);
     }

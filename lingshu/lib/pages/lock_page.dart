@@ -42,7 +42,7 @@ class _LockPageState extends ConsumerState<LockPage> {
       if (ok) {
         ref.read(sessionProvider.notifier).unlock();
         // 路由 redirect 不随状态变化自动重算，必须手动跳转（与 PIN 解锁一致）
-        context.go('/home');
+        context.go('/ai');
       }
     } catch (_) {
       if (mounted) _toast('生物识别不可用，请输入 PIN 解锁');
@@ -58,7 +58,7 @@ class _LockPageState extends ConsumerState<LockPage> {
     final auth = ref.read(authProvider);
     if (!auth.pinSet || auth.verifyPin(_pin.text)) {
       ref.read(sessionProvider.notifier).unlock();
-      context.go('/home');
+      context.go('/ai');
     } else {
       setState(() {
         _error = 'PIN 不正确';

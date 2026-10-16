@@ -11,8 +11,9 @@
 
 - **入口 `lib/main.dart`**：初始化 SharedPreferences → 构建 `ProviderContainer`（override `sharedPreferencesProvider`）→ 预加载静态内容（`contentProvider.load()`）→ 启动时全量重排用药提醒与药箱到期提醒通知（`_rescheduleAll`）→ `runApp(UncontrolledProviderScope(LingShuApp))`。
 - **应用壳 `lib/app.dart`**：`MaterialApp.router` + `buildRouter(WidgetRef)`（go_router）。主题 `buildLingShuTheme()`（见 `lib/core/theme.dart`）。
-- **会话门禁**：`SessionState { loading, needOnboarding, locked, ready }`（定义在 `lib/providers.dart`）。router redirect 逻辑：未建档 → `/onboarding`；已建档 → 每次启动锁 `/lock`（PIN/生物识别解锁）。
-- **底部导航**：`StatefulShellRoute.indexedStack` 五分支（`lib/pages/home_shell.dart`，NavigationBar 五 Tab，五行配色）：
+- **会话门禁**：`SessionState { loading, needOnboarding, locked, ready }`（定义在 `lib/providers.dart`）。router redirect 逻辑：未建档 → `/onboarding`；已建档 → 每次启动锁 `/lock`（PIN/生物识别解锁）；就绪后 `/`、`/onboarding`、`/lock` → **`/ai`（AI 健康管家为登录后默认首页）**，锁屏/建档完成后也直接 `go('/ai')`。
+- **默认首页 `/ai`**：AI 健康管家（`pages/ai/ai_home_page.dart`，不在底部导航壳内、全屏无 Tab）。**左上角返回按钮是进入传统界面的唯一入口**（`context.go('/home')`）；「我的」页 AI 卡片也可 `push` 进入。Android 系统返回键在 `/ai` 根路由上退出应用，不进传统界面。
+- **传统界面底部导航**：`StatefulShellRoute.indexedStack` 五分支（`lib/pages/home_shell.dart`，NavigationBar 五 Tab，五行配色）：
 
 | Tab | 路由 | 页面 | 五行色 |
 |---|---|---|---|
@@ -22,7 +23,7 @@
 | 急救 | `/firstaid` | `pages/firstaid/firstaid_page.dart` | 火 |
 | 我的 | `/profile` | `pages/profile/profile_page.dart` | 金 |
 
-- **二级路由**：`/onboarding`、`/lock`、`/records/import`（拍照导入）、`/records/:id`（档案详情）、`/metrics/:id`（指标趋势图）、`/family` 与 `/family/edit?id=&first=1`（成员档案）、`/medications` 与 `/medications/edit?id=`（用药）、`/settings`、`/backup`（备份恢复）、`/constitution`（体质辨识）、`/box`（家庭药箱）、`/firstaid/:id`（急救场景）、`/ai`（AI 原生入口·体验版，由「我的」页进入）。
+- **二级路由**：`/onboarding`、`/lock`、`/records/import`（拍照导入）、`/records/:id`（档案详情）、`/metrics/:id`（指标趋势图）、`/family` 与 `/family/edit?id=&first=1`（成员档案）、`/medications` 与 `/medications/edit?id=`（用药）、`/settings`、`/backup`（备份恢复）、`/constitution`（体质辨识）、`/box`（家庭药箱）、`/firstaid/:id`（急救场景）、`/ai`（AI 健康管家·登录后默认首页，见上）。
 - **注意**：中药图鉴三个页面（`pages/herb/`）**不在 go_router 中注册**，由铜人页等处 `Navigator.push` 直跳。
 
 ## lib/ 目录职责（共 57 个 .dart 文件）
@@ -55,8 +56,8 @@ lib/
 │       └── weather_service.dart      Open-Meteo 免 Key 天气（节气卡片用）
 └── pages/                 页面层（8 子模块 + 3 顶层壳）
     ├── home_shell.dart / lock_page.dart / onboarding_page.dart
-    ├── ai/         AI 原生入口（体验版）：ai_home_page（北斗星野会话+语音呼吸球；气泡内嵌能力点选列表与「打开页面」按钮）+ beidou_background（呼吸星野画笔）
-    ├── acupoint/   首页铜人：acupoint_page(814 行) + body3d(619 行，纯 Flutter 软件渲染 3D：V3/BodyPart/Mannequin 球+胶囊建模、自定义光照) + body_chart(464 行，2D 挂图)
+    ├── ai/         AI 健康管家（登录后默认首页）：ai_home_page（北斗星野会话+语音呼吸球；气泡内嵌能力点选列表与「打开页面」按钮；左上角返回进传统界面）+ beidou_background（呼吸星野画笔）
+    ├── acupoint/   传统界面首页铜人：acupoint_page(814 行) + body3d(619 行，纯 Flutter 软件渲染 3D：V3/BodyPart/Mannequin 球+胶囊建模、自定义光照) + body_chart(464 行，2D 挂图)
     ├── records/    档案库：records_page / records_calendar / record_import_page（拍照/文件+AI 识别）/ record_detail_page
     ├── metrics/    指标：metrics_page / metric_chart_page（fl_chart 趋势+参考区间带）
     ├── profile/    我的：profile / family / medications / med_edit / settings / backup / constitution（九种体质问卷）/ hr_measure_sheet（心率测量）

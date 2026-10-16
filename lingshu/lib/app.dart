@@ -39,7 +39,7 @@ GoRouter buildRouter(WidgetRef ref) {
       if (session == SessionState.locked) {
         return loc == '/lock' ? null : '/lock';
       }
-      if (loc == '/' || loc == '/onboarding' || loc == '/lock') return '/home';
+      if (loc == '/' || loc == '/onboarding' || loc == '/lock') return '/ai';
       return null;
     },
     routes: [
@@ -72,7 +72,7 @@ GoRouter buildRouter(WidgetRef ref) {
         path: '/records/import',
         builder: (c, s) => const RecordImportPage(),
       ),
-      // AI 原生入口（体验版）：独立开发中，暂不作为默认首页。
+      // AI 健康管家：登录后默认首页（redirect 把 / 指到这里）。
       // page key 绑定会话代次：入口点击 bump 一次，强制全新 State——
       // 每次打开都是收起的历史 + 干净的新会话视图
       GoRoute(

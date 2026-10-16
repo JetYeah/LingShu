@@ -22,7 +22,8 @@ import 'beidou_background.dart';
 /// 档案/概览/体质/药箱/急救/中药/穴位/节气，其余由大模型直接作答。
 /// 会话历史落盘（ai_history_store）：每次打开默认收起，点历史条展开，
 /// 头部按钮清空（需确认）；不点清空绝不丢历史。
-/// 经典界面不受影响（我的 → AI 健康管家 进入本页）。
+/// 登录后默认首页（redirect 把 / 指到这里）：左上角返回进入经典五 Tab 界面，
+/// 「我的 → AI 健康管家」也可进入本页。
 class AiHomePage extends ConsumerStatefulWidget {
   const AiHomePage({super.key});
 
@@ -375,9 +376,10 @@ class _AiHomePageState extends ConsumerState<AiHomePage>
         padding: const EdgeInsets.fromLTRB(8, 6, 8, 0),
         child: Row(children: [
           IconButton(
+            tooltip: '进入经典界面',
             icon: const Icon(Icons.arrow_back_ios_new,
                 size: 20, color: _paper),
-            onPressed: () => context.pop(),
+            onPressed: () => context.go('/home'),
           ),
           const Spacer(),
           Column(children: [

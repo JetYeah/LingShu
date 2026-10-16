@@ -8,7 +8,7 @@
 
 ![Flutter](https://img.shields.io/badge/Flutter-3.x-02569B?logo=flutter&logoColor=white)
 ![Platform](https://img.shields.io/badge/平台-Android%20arm64-3DDC84?logo=android&logoColor=white)
-![Release](https://img.shields.io/badge/最新-v0.1.51-E8743B?logo=github)
+![Release](https://img.shields.io/badge/最新-v0.1.52-E8743B?logo=github)
 ![License](https://img.shields.io/badge/License-MIT-yellow)
 
 <img src="lingshu/screenshots/24_AI管家_北斗星野.png" width="30%" alt="AI 健康管家 · 北斗星野"/> <img src="lingshu/screenshots/03_挂图_正面视图.png" width="30%" alt="经络穴位挂图"/> <img src="lingshu/screenshots/19_家庭小药箱_药柜.png" width="30%" alt="家庭小药箱"/>
@@ -30,7 +30,7 @@
 
 ### 🌌 AI 健康管家 · 一句话，指挥全 App
 
-全能力智能体入口：北斗七星星野在页间流转，表盘标注十二地支、按当下时辰给出**子午流注**养生提示。文字、多图、语音（按住语音球说话）三种进法，AI 自动分派到全 App 的 15 类动作——
+**登录后的首页就是 TA**（v0.1.52 起）：北斗七星星野在页间流转，表盘标注十二地支、按当下时辰给出**子午流注**养生提示。文字、多图、语音（按住语音球说话）三种进法，AI 自动分派到全 App 的 15 类动作——想用传统界面，点左上角返回即达经典五 Tab。
 
 > 🗂「帮我把这张病历归档」 · 📊「看看最近7天的血糖」 · ✍️「记一下 血压130/85 心率76」 · 💊「提醒我每天早晚8点吃一次降压药」 · 🧰「药箱里有什么快过期了？」 · 🚑「烫伤了怎么急救？」 · 🌿「黄芪的功效和禁忌」 · ⚡「合谷穴在哪里？」 · ☯️「我的体质怎么调养？」 · 🗓「今天什么节气怎么养生？」 · 🏥「我的健康概览」……
 
