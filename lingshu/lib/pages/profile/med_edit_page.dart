@@ -124,6 +124,8 @@ class _MedEditPageState extends ConsumerState<MedEditPage> {
     final msg = '灵枢·${_name.text.trim()}'
         '${_dosage.text.isNotEmpty ? '（${_dosage.text}）' : ''}'
         ' ${_mealRelation}服用';
+    // 每天传 null（平台侧会展开为全 7 天——ACTION_SET_ALARM 不带
+    // EXTRA_DAYS 建的是一次性闹钟，不能靠缺省表达「每天」）
     final days = _days.length == 7 ? null : _days.toList();
     var ok = 0;
     for (final t in _times) {

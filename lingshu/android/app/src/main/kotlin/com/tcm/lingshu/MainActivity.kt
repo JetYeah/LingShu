@@ -23,7 +23,9 @@ class MainActivity : FlutterFragmentActivity() {
                 when (call.method) {
                     "setAlarm" -> {
                         // 参数：name 提醒内容 / hour,minute / days=[周一..周日的 Dart
-                        // DateTime.weekday 1..7]，null 或空 = 每天
+                        // DateTime.weekday 1..7]，null 或空 = 每天。
+                        // 注意：ACTION_SET_ALARM 不带 EXTRA_DAYS 建的是一次性闹钟
+                        // ——「每天」必须显式传全 7 个 Calendar 日常量。
                         val name = call.argument<String>("name") ?: ""
                         val hour = call.argument<Int>("hour") ?: 8
                         val minute = call.argument<Int>("minute") ?: 0
@@ -38,21 +40,31 @@ class MainActivity : FlutterFragmentActivity() {
                             6 to java.util.Calendar.SATURDAY,
                             7 to java.util.Calendar.SUNDAY,
                         )
+                        val calDays: List<Int> = if (daysArg.isNullOrEmpty()) {
+                            // 每天 = 全部 7 天
+                            listOf(
+                                java.util.Calendar.MONDAY,
+                                java.util.Calendar.TUESDAY,
+                                java.util.Calendar.WEDNESDAY,
+                                java.util.Calendar.THURSDAY,
+                                java.util.Calendar.FRIDAY,
+                                java.util.Calendar.SATURDAY,
+                                java.util.Calendar.SUNDAY,
+                            )
+                        } else {
+                            daysArg.mapNotNull { dartToCalendar[it] }
+                        }
                         try {
                             val intent = Intent(AlarmClock.ACTION_SET_ALARM).apply {
                                 putExtra(AlarmClock.EXTRA_MESSAGE, name)
                                 putExtra(AlarmClock.EXTRA_HOUR, hour)
                                 putExtra(AlarmClock.EXTRA_VIBRATE, true)
                                 putExtra(AlarmClock.EXTRA_SKIP_UI, true)
-                                if (!daysArg.isNullOrEmpty()) {
-                                    val calDays =
-                                        daysArg.mapNotNull { dartToCalendar[it] }
-                                    if (calDays.isNotEmpty()) {
-                                        putIntegerArrayListExtra(
-                                            AlarmClock.EXTRA_DAYS,
-                                            ArrayList(calDays)
-                                        )
-                                    }
+                                if (calDays.isNotEmpty()) {
+                                    putIntegerArrayListExtra(
+                                        AlarmClock.EXTRA_DAYS,
+                                        ArrayList(calDays)
+                                    )
                                 }
                             }
                             startActivity(intent)
