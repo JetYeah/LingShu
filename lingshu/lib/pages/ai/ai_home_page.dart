@@ -15,6 +15,7 @@ import '../../core/services/agent_service.dart';
 import '../../core/services/ai_history_store.dart';
 import '../../core/theme.dart';
 import '../../providers.dart';
+import '../home_shell.dart';
 import 'beidou_background.dart';
 
 /// AI 原生入口（体验版）：北斗呼吸星野 + 单一输入框 + 呼吸语音球。
@@ -556,7 +557,17 @@ class _AiHomePageState extends ConsumerState<AiHomePage>
             Align(
               alignment: Alignment.centerLeft,
               child: GestureDetector(
-                onTap: () => context.push(m.route!),
+                onTap: () {
+                  final r = m.route!;
+                  // 五 Tab 根路由=传统界面顶层：go 切换界面（push 会把第二个
+                  // 壳叠在 AI 页上，真机报告过转场后空白）；二级页仍 push，
+                  // 看完系统返回即回会话
+                  if (HomeShell.locations.contains(r)) {
+                    context.go(r);
+                  } else {
+                    context.push(r);
+                  }
+                },
                 child: Container(
                   padding: const EdgeInsets.symmetric(
                       horizontal: 14, vertical: 8),

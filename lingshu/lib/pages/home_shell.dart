@@ -8,6 +8,13 @@ class HomeShell extends StatelessWidget {
   final StatefulNavigationShell shell;
   const HomeShell({super.key, required this.shell});
 
+  /// 五个 Tab 的根路由（= 传统界面的顶层位置）。
+  /// AI 管家页跳这些位置必须用 go 切换界面，不能 push——
+  /// push 会把第二个壳叠在 AI 页上，真机上出现过转场后全白的怪象。
+  static const locations = <String>[
+    '/home', '/records', '/metrics', '/firstaid', '/profile',
+  ];
+
   static const _items = [
     (icon: Icons.accessibility_new, label: '灵枢', color: WuXing.water),
     (icon: Icons.folder_copy_outlined, label: '档案', color: WuXing.earth),

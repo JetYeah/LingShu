@@ -1067,11 +1067,36 @@ class AgentService {
 
   // ── 动作：节气养生 ──
 
+  /// 当前节气名：查 lunar 节气表取「最近一个已交节」的节气。
+  /// 不能用 getJieQi()——它只在交节当天返回名字，平时返回空串
+  /// （v0.1.52 线上 bug：节气养生只有"今日·"，没有节气名与养生提示）。
+  /// 表键跨年的用拼音（JIE_QI_IN_USE：上年大雪 DA_XUE 起、次年惊蛰
+  /// JING_ZHE 止），换算与包内 _convertJieQi 同规则。
+  static String _currentTermName(Lunar lunar, DateTime now) {
+    const pinyinKeys = {
+      'DA_XUE': '大雪', 'DONG_ZHI': '冬至', 'XIAO_HAN': '小寒',
+      'DA_HAN': '大寒', 'LI_CHUN': '立春', 'YU_SHUI': '雨水',
+      'JING_ZHE': '惊蛰',
+    };
+    var name = '';
+    DateTime? best;
+    lunar.getJieQiTable().forEach((key, solar) {
+      final at = DateTime(solar.getYear(), solar.getMonth(), solar.getDay(),
+          solar.getHour(), solar.getMinute(), solar.getSecond());
+      if (at.isAfter(now)) return; // 未交节
+      final b = best;
+      if (b != null && !at.isAfter(b)) return; // 不是最近的
+      best = at;
+      name = pinyinKeys[key] ?? key;
+    });
+    return name;
+  }
+
   Future<AgentReply> _solarTerm(String lead) async {
     await content.load();
     final now = DateTime.now();
     final lunar = Lunar.fromDate(now);
-    final name = lunar.getJieQi();
+    final name = _currentTermName(lunar, now);
     final t = content.terms.where((x) => x.name == name).firstOrNull;
     return AgentReply(
         text: [

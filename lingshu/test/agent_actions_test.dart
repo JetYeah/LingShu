@@ -1,4 +1,4 @@
-import 'package:drift/drift.dart' hide isNull;
+import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -6,6 +6,7 @@ import 'package:lingshu/core/db.dart';
 import 'package:lingshu/core/services/agent_service.dart';
 import 'package:lingshu/core/services/content_loader.dart';
 import 'package:lingshu/core/services/ocr_service.dart';
+import 'package:lingshu/pages/home_shell.dart';
 import 'package:lingshu/pages/metrics/metrics_page.dart'
     show seedPresetMetricsIfEmpty;
 
@@ -261,9 +262,16 @@ void main() {
       expect(r.route, '/home');
     });
 
-    test('节气：返回今日节气与农历', () async {
+    test('节气：非交节日也给出当前节气名与养生提示', () async {
       final r = await act('solar_term');
-      expect(r.text, contains('今日'));
+      // 回归（v0.1.52）：getJieQi() 只在交节当天返回名字，平时空串——
+      // 表现为「只有今日·，没有节气没有养生」。这里要求节气名必须出现，
+      // 且该节气的 tip（养生提示）一并给出。
+      final m = RegExp('今日·(\\S+?)(?:（|\n)').firstMatch(r.text);
+      expect(m, isNotNull, reason: '回复缺「今日·节气名」：${r.text}');
+      final name = m!.group(1)!;
+      final term = content.terms.where((x) => x.name == name).first;
+      expect(r.text, contains(term.tip));
       expect(r.text, contains('农历'));
     });
   });
@@ -278,6 +286,23 @@ void main() {
     test('navigate 未知页面列出可打开项', () async {
       final r = await act('navigate', args: {'page': '不存在'});
       expect(r.text, contains('用药提醒'));
+    });
+
+    test('pageTable 五 Tab 路由与 HomeShell.locations 一致（AI 页据此用 go 而非 push）', () {
+      final tabRoutes = AgentService.pageTable.entries
+          .where((e) => HomeShell.locations.contains(e.value.$1))
+          .map((e) => e.value.$1)
+          .toSet();
+      // home/records/metrics/firstaid/profile 五个分支位置都必须在白名单里，
+      // 且 pageTable 不应出现 HomeShell 之外的五 Tab 位置拼错
+      expect(tabRoutes, containsAll(HomeShell.locations));
+      for (final e in AgentService.pageTable.entries) {
+        if (const {'home', 'records', 'metrics', 'firstaid', 'profile'}
+            .contains(e.key)) {
+          expect(HomeShell.locations.contains(e.value.$1), isTrue,
+              reason: 'pageTable[${e.key}] = ${e.value.$1} 应是 Tab 根路由');
+        }
+      }
     });
 
     test('「你能做什么」本地直答：不配 Key 也返回能力列表', () async {
