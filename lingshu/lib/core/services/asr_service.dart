@@ -41,6 +41,23 @@ class AsrService {
   }
 }
 
+/// 时点标签 → 代表钟点。回填的测量日期（日期选择器、口述「昨天/ X月X日」）
+/// 只到「日」、时刻落 00:00，直接入库会同日多条乱序（后录的 00:00 排到
+/// 实测记录之前）；带时点时用代表钟点，同日记录即按时点先后稳定排序。
+/// 覆盖血糖时点（空腹/餐前后/睡前/随机）与血压时段（早上/中午/晚上）。
+const periodHour = <String, int>{
+  '空腹': 7, '早餐前': 7, '早餐后': 9, '早上': 8,
+  '午餐前': 11, '中午': 12, '随机': 12, '午餐后': 13,
+  '晚餐前': 17, '晚餐后': 19, '晚上': 20, '睡前': 21,
+};
+
+/// 回填时刻归一：日期落在 00:00 且带时点 → 代表钟点；其余原样返回。
+DateTime measuredAtWithPeriod(DateTime date, String? timeLabel) {
+  if (timeLabel == null || date.hour != 0 || date.minute != 0) return date;
+  final h = periodHour[timeLabel];
+  return h == null ? date : DateTime(date.year, date.month, date.day, h);
+}
+
 /// 口述血压/心率的解析结果（数值已按字段归位）
 class SpeechVitals {
   final double sys; // 高压（收缩压）

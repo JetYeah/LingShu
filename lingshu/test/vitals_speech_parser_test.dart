@@ -133,4 +133,26 @@ void main() {
     expect(v6.date, isNull);
     expect(v6.period, isNull);
   });
+
+  group('measuredAtWithPeriod 回填时刻归一', () {
+    final day = DateTime(2026, 10, 17); // 00:00（日期选择器/口述日期的产物）
+    final measured = DateTime(2026, 10, 17, 7, 30); // 实测时刻
+
+    test('00:00 + 已知时点 → 代表钟点，同日按时点先后有序', () {
+      expect(measuredAtWithPeriod(day, '空腹'), DateTime(2026, 10, 17, 7));
+      expect(measuredAtWithPeriod(day, '早餐后'), DateTime(2026, 10, 17, 9));
+      expect(measuredAtWithPeriod(day, '晚上'), DateTime(2026, 10, 17, 20));
+      expect(measuredAtWithPeriod(day, '睡前'), DateTime(2026, 10, 17, 21));
+      final hs = ['空腹', '早餐后', '晚餐后', '睡前']
+          .map((l) => measuredAtWithPeriod(day, l))
+          .toList();
+      expect(hs, equals([...hs]..sort()));
+    });
+
+    test('非 00:00 / 无时点 / 未知时点 → 原样返回', () {
+      expect(measuredAtWithPeriod(measured, '空腹'), measured);
+      expect(measuredAtWithPeriod(day, null), day);
+      expect(measuredAtWithPeriod(day, '不存在'), day);
+    });
+  });
 }

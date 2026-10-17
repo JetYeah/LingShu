@@ -43,6 +43,7 @@ class _Msg {
   final String? route; // 可跳转的 app 内页面
   final String? routeLabel;
   final bool pending; // 助手思考中
+  bool expanded = false; // 长文本折叠态（仅会话内运行时状态，不落盘）
   _Msg({
     this.text = '',
     this.imagePaths = const [],
@@ -433,6 +434,11 @@ class _AiHomePageState extends ConsumerState<AiHomePage>
   }
 
   Widget _bubble(_Msg m) {
+    // 长文本折叠：健康概览/百科类回复动辄十几行，默认只留 6 行，
+    // 点「展开全文」看完整内容；复制按钮复制的始终是全文
+    final long =
+        m.text.isNotEmpty && (m.text.length > 220 || m.text.split('\n').length > 8);
+    final collapsed = long && !m.expanded;
     final bubble = Container(
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
@@ -485,9 +491,29 @@ class _AiHomePageState extends ConsumerState<AiHomePage>
                       fontSize: 12.5, color: _paper.withValues(alpha: 0.6))),
             ])
           else if (m.text.isNotEmpty) ...[
+            // 长文本折叠：健康概览/百科类回复动辄十几行，默认只留 6 行，
+            // 点「展开全文」看完整内容；复制按钮复制的始终是全文
             Text(m.text,
+                maxLines: collapsed ? 6 : null,
+                overflow: collapsed ? TextOverflow.ellipsis : null,
                 style: const TextStyle(
                     fontSize: 14, height: 1.55, color: _paper)),
+            if (long)
+              GestureDetector(
+                onTap: () => setState(() => m.expanded = !m.expanded),
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 6),
+                  child: Row(mainAxisSize: MainAxisSize.min, children: [
+                    Icon(m.expanded ? Icons.expand_less : Icons.expand_more,
+                        size: 14, color: _paper.withValues(alpha: 0.5)),
+                    const SizedBox(width: 3),
+                    Text(m.expanded ? '收起' : '展开全文',
+                        style: TextStyle(
+                            fontSize: 11,
+                            color: _paper.withValues(alpha: 0.55))),
+                  ]),
+                ),
+              ),
             // 一键复制：AI 回答常含需要留存的内容（指标解读、用药建议等）
             if (!m.user)
               Align(

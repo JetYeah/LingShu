@@ -936,15 +936,17 @@ Future<Metric> _ensureHrMetric(AppDatabase db, int profileId) async {
 Future<void> _saveEntry(Metric metric, double? v1, double? v2, double? hrVal,
     DateTime date, String note, WidgetRef ref,
     {String? timeLabel}) async {
+  // 血压与同测心率共用同一时刻：先按时点归一（00:00 回填 → 代表钟点）
+  final at = measuredAtWithPeriod(date, timeLabel);
   if (v1 != null) {
-    await _save(metric, v1, v2, date, note, ref, timeLabel: timeLabel);
+    await _save(metric, v1, v2, at, note, ref, timeLabel: timeLabel);
   }
   if (hrVal != null) {
     final db = ref.read(dbProvider);
     final profileId = ref.read(currentProfileIdProvider);
     if (profileId == null) return;
     final hrMetric = await _ensureHrMetric(db, profileId);
-    await _save(hrMetric, hrVal, null, date,
+    await _save(hrMetric, hrVal, null, at,
         note.isEmpty ? (v1 != null ? '与血压同测' : '') : note, ref);
   }
 }
@@ -978,7 +980,8 @@ Future<void> _save(Metric metric, double v1, double? v2, DateTime date,
         metricId: metric.id,
         value1: v1,
         value2: Value(v2),
-        measuredAt: date,
+        // 回填（选择器/口述只到日）带时点 → 代表钟点，保证同日按时点先后有序
+        measuredAt: measuredAtWithPeriod(date, timeLabel),
         note: Value(note.isEmpty ? null : note),
         timeLabel: Value(timeLabel),
       ));

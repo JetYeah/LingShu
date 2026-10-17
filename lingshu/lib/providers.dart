@@ -130,7 +130,11 @@ final metricsProvider = StreamProvider<List<Metric>>((ref) {
 Stream<List<MetricValue>> watchMetricValues(AppDatabase db, int metricId) {
   return (db.select(db.metricValues)
         ..where((v) => v.metricId.equals(metricId))
-        ..orderBy([(v) => OrderingTerm.desc(v.measuredAt)]))
+        // id 次级键：同刻记录（AI 归档常落在 00:00）稳定按写入先后排
+        ..orderBy([
+          (v) => OrderingTerm.desc(v.measuredAt),
+          (v) => OrderingTerm.desc(v.id),
+        ]))
       .watch();
 }
 

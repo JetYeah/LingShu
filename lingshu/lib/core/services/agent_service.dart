@@ -18,7 +18,7 @@ import 'package:uuid/uuid.dart';
 import '../db.dart';
 import '../theme.dart';
 import 'agent_capabilities.dart';
-import 'asr_service.dart' show parseVitalsFromSpeech;
+import 'asr_service.dart' show measuredAtWithPeriod, parseVitalsFromSpeech;
 import 'content_loader.dart';
 import 'herb_repo.dart';
 import 'notification_service.dart';
@@ -441,7 +441,8 @@ class AgentService {
           metricId: metric.id,
           value1: v1,
           value2: Value(v2),
-          measuredAt: when,
+          // 口述日期只到「日」(00:00)：带时点 → 代表钟点，同日按时点先后有序
+          measuredAt: measuredAtWithPeriod(when, timeLabel),
           note: Value(note),
           timeLabel: Value(timeLabel),
         ));

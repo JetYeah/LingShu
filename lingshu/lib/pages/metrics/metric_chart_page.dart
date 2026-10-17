@@ -13,6 +13,13 @@ import '../../providers.dart';
 import 'metric_ranges.dart';
 import 'metrics_page.dart';
 
+/// 测量值时间升序 + id 次级键：同刻记录（AI 归档常落在 00:00）稳定按
+/// 写入先后排，List.sort 不稳定，缺次级键会同日乱序
+int _metricValueAsc(MetricValue a, MetricValue b) {
+  final c = a.measuredAt.compareTo(b.measuredAt);
+  return c != 0 ? c : a.id.compareTo(b.id);
+}
+
 /// 指标趋势图。血压双值拆「收缩压/舒张压」两张分图、血糖按测量时点拆
 /// 「餐前（空腹）/餐后」两张分图——两者正常区间不同，混在一张图上
 /// 读不出各自的参考带；其余指标单图（参考带贴在图上）。
@@ -148,7 +155,7 @@ class _MetricChartPageState extends ConsumerState<MetricChartPage> {
                           ..where((t) => t.metricId.equals(widget.metricId)))
                         .get();
                     if (!mounted) return;
-                    values.sort((a, b) => a.measuredAt.compareTo(b.measuredAt));
+                    values.sort(_metricValueAsc);
                     _generateAiInfo(metric, values);
                   },
                 ),
@@ -159,7 +166,7 @@ class _MetricChartPageState extends ConsumerState<MetricChartPage> {
             builder: (context, snap) {
               final values = (snap.data ?? const <MetricValue>[])
                   .toList()
-                ..sort((a, b) => a.measuredAt.compareTo(b.measuredAt));
+                ..sort(_metricValueAsc);
               if (values.isEmpty) {
                 return Center(
                   child: Column(
