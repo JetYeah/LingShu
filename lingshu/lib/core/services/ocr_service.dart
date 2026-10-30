@@ -1,6 +1,8 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:http/http.dart' as http;
 
 /// 视觉大模型提取结果
@@ -141,12 +143,44 @@ class OcrService {
   final String baseUrl;
   final String apiKey;
   final String model;
+  final http.Client _client; // 可注入 mock（测试重试）
+  final Duration retryDelay; // 重试退避基数（测试置零）
 
   OcrService({
     required this.baseUrl,
     required this.apiKey,
     this.model = defaultModel,
-  });
+    http.Client? client,
+    this.retryDelay = const Duration(milliseconds: 1500),
+  }) : _client = client ?? http.Client();
+
+  /// 大模型 HTTP POST + 瞬时故障重试。连续多图归档时单张请求会被
+  /// 网络中断（ClientException: connection abort / 超时）或限流（429）、
+  /// 服务端瞬时错误（5xx）打断——整条归档就丢一张，这里统一重试：
+  /// 最多 3 次，退避递增；4xx 客户端错误（Key 错/参数错）不重试原样返回。
+  Future<http.Response> _postWithRetry(
+    Uri uri, {
+    required Map<String, String> headers,
+    required String body,
+    Duration timeout = const Duration(seconds: 60),
+    int attempts = 3,
+  }) async {
+    var delay = retryDelay;
+    for (var i = 1;; i++) {
+      try {
+        final resp =
+            await _client.post(uri, headers: headers, body: body).timeout(timeout);
+        if (resp.statusCode < 500 && resp.statusCode != 429) return resp;
+        if (i >= attempts) return resp;
+        debugPrint('[ocr] HTTP ${resp.statusCode}，$delay 后重试($i/$attempts)');
+      } catch (e) {
+        if (i >= attempts) rethrow;
+        debugPrint('[ocr] $e，$delay 后重试($i/$attempts)');
+      }
+      await Future<void>.delayed(delay);
+      delay *= 2;
+    }
+  }
 
   static const _prompt = '''
 你是医疗档案数字化助手。请阅读这张医疗文书照片（病历、检验报告、检查报告、处方、体检报告等），提取以下信息，只输出 JSON，不要输出任何其他文字：
@@ -170,7 +204,7 @@ class OcrService {
         '心血管、肝胆、肾脏、血糖、血脂、血常规、凝血功能、电解质、甲状腺、感染免疫、'
         '骨骼关节、消化、呼吸、泌尿生殖、肿瘤标志物、病理检查、维生素与代谢、基础体征、其他';
     final uri = Uri.parse('$baseUrl/chat/completions');
-    final resp = await http.post(
+    final resp = await _postWithRetry(
       uri,
       headers: {
         'Content-Type': 'application/json',
@@ -219,7 +253,7 @@ class OcrService {
   /// 纯文本对话，返回 keep + merge 别名列表；不相似的绝不能强行合并。
   Future<List<MetricMergeGroup>> mergeGroups(List<String> names) async {
     final uri = Uri.parse('$baseUrl/chat/completions');
-    final resp = await http.post(
+    final resp = await _postWithRetry(
       uri,
       headers: {
         'Content-Type': 'application/json',
@@ -245,7 +279,7 @@ class OcrService {
         ],
         'temperature': 0.1,
       }),
-    ).timeout(const Duration(seconds: 60));
+    );
     if (resp.statusCode != 200) {
       throw Exception('HTTP ${resp.statusCode}: ${resp.body}');
     }
@@ -282,7 +316,7 @@ class OcrService {
         ? ''
         : '\n最近的测量值：${recentValues.map((v) => v.toStringAsFixed(2)).join('、')}\n';
     final uri = Uri.parse('$baseUrl/chat/completions');
-    final resp = await http.post(
+    final resp = await _postWithRetry(
       uri,
       headers: {
         'Content-Type': 'application/json',
@@ -306,7 +340,7 @@ class OcrService {
         ],
         'temperature': 0.2,
       }),
-    ).timeout(const Duration(seconds: 60));
+    );
     if (resp.statusCode != 200) {
       throw Exception('HTTP ${resp.statusCode}: ${resp.body}');
     }
@@ -336,7 +370,7 @@ class OcrService {
   Future<HerbGuess> identifyHerb(Uint8List imageBytes) async {
     final b64 = base64Encode(imageBytes);
     final uri = Uri.parse('$baseUrl/chat/completions');
-    final resp = await http.post(
+    final resp = await _postWithRetry(
       uri,
       headers: {
         'Content-Type': 'application/json',
@@ -369,7 +403,7 @@ class OcrService {
         ],
         'temperature': 0.1,
       }),
-    ).timeout(const Duration(seconds: 60));
+    );
     if (resp.statusCode != 200) {
       throw Exception('HTTP ${resp.statusCode}: ${resp.body}');
     }
@@ -421,7 +455,7 @@ class OcrService {
       }
     ];
     final uri = Uri.parse('$baseUrl/chat/completions');
-    final resp = await http.post(
+    final resp = await _postWithRetry(
       uri,
       headers: {
         'Content-Type': 'application/json',
@@ -434,7 +468,8 @@ class OcrService {
         ],
         'temperature': 0.1,
       }),
-    ).timeout(const Duration(seconds: 120));
+      timeout: const Duration(seconds: 120),
+    );
     if (resp.statusCode != 200) {
       throw Exception('HTTP ${resp.statusCode}: ${resp.body}');
     }
@@ -472,7 +507,7 @@ class OcrService {
   Future<BoxMatchResult> matchBoxMedicines(
       String query, List<String> inventory) async {
     final uri = Uri.parse('$baseUrl/chat/completions');
-    final resp = await http.post(
+    final resp = await _postWithRetry(
       uri,
       headers: {
         'Content-Type': 'application/json',
@@ -495,7 +530,7 @@ class OcrService {
         ],
         'temperature': 0.1,
       }),
-    ).timeout(const Duration(seconds: 60));
+    );
     if (resp.statusCode != 200) {
       throw Exception('HTTP ${resp.statusCode}: ${resp.body}');
     }
@@ -546,7 +581,7 @@ class OcrService {
       }
     ];
     final uri = Uri.parse('$baseUrl/chat/completions');
-    final resp = await http.post(
+    final resp = await _postWithRetry(
       uri,
       headers: {
         'Content-Type': 'application/json',
@@ -559,7 +594,8 @@ class OcrService {
         ],
         'temperature': 0.1,
       }),
-    ).timeout(const Duration(seconds: 90));
+      timeout: const Duration(seconds: 90),
+    );
     if (resp.statusCode != 200) {
       throw Exception('HTTP ${resp.statusCode}: ${resp.body}');
     }
@@ -604,7 +640,7 @@ class OcrService {
   Future<OcrResult> extract(Uint8List imageBytes) async {
     final b64 = base64Encode(imageBytes);
     final uri = Uri.parse('$baseUrl/chat/completions');
-    final resp = await http.post(
+    final resp = await _postWithRetry(
       uri,
       headers: {
         'Content-Type': 'application/json',
@@ -626,7 +662,7 @@ class OcrService {
         ],
         'temperature': 0.1,
       }),
-    ).timeout(const Duration(seconds: 60));
+    );
 
     if (resp.statusCode != 200) {
       throw Exception('识别接口返回 ${resp.statusCode}: ${resp.body}');

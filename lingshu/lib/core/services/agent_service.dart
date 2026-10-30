@@ -1136,7 +1136,7 @@ class AgentService {
     final lines = <String>[];
     for (final r in results) {
       if (r.error != null) {
-        lines.add('✕ 《${r.title}》归档失败：${r.error}');
+        lines.add('✕ 《${r.title}》${_friendlyArchiveError(r.error!)}');
       } else if (r.dup) {
         lines.add('↺ 《${r.title}》与已归档内容相同，已跳过');
       } else {
@@ -1146,6 +1146,20 @@ class AgentService {
     final ok = results.where((r) => r.error == null && !r.dup).length;
     return '归档完成：成功 $ok 张 / 共 ${results.length} 张\n${lines.join('\n')}\n'
         '可在「档案」页查看与修改。';
+  }
+
+  /// 归档失败的对外文案：网络层中断（请求层已自动重试 3 次仍未成功）
+  /// 给可操作指引；其余（Key 错、解析错需原文排查）原样透出
+  String _friendlyArchiveError(String err) {
+    final network = err.contains('ClientException') ||
+        err.contains('TimeoutException') ||
+        err.contains('SocketException') ||
+        err.contains('Connection') ||
+        err.contains('Failed host lookup') ||
+        err.contains('网络');
+    return network
+        ? '网络连接中断（已自动重试仍未成功），请检查网络后在「档案 → 拍照归档」单独补录这张'
+        : '归档失败：$err';
   }
 
   Future<_ArchiveResult> _archiveOne(
