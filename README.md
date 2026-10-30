@@ -8,7 +8,7 @@
 
 ![Flutter](https://img.shields.io/badge/Flutter-3.x-02569B?logo=flutter&logoColor=white)
 ![Platform](https://img.shields.io/badge/平台-Android%20arm64-3DDC84?logo=android&logoColor=white)
-![Release](https://img.shields.io/badge/最新-v0.1.53-E8743B?logo=github)
+![Release](https://img.shields.io/badge/最新-v0.1.54-E8743B?logo=github)
 ![License](https://img.shields.io/badge/License-MIT-yellow)
 
 <img src="lingshu/screenshots/24_AI管家_北斗星野.png" width="30%" alt="AI 健康管家 · 北斗星野"/> <img src="lingshu/screenshots/03_挂图_正面视图.png" width="30%" alt="经络穴位挂图"/> <img src="lingshu/screenshots/19_家庭小药箱_药柜.png" width="30%" alt="家庭小药箱"/>
