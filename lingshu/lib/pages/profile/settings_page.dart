@@ -103,6 +103,119 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     }
   }
 
+  Future<void> _setFontScale(double v) async {
+    if (v == ref.read(fontScaleProvider)) return;
+    await ref.read(sharedPreferencesProvider).setDouble('font.scale', v);
+    // provider 一变 MaterialApp.builder 即以新缩放重建，全局即时生效
+    ref.read(fontScaleProvider.notifier).state = v;
+  }
+
+  /// 三档选择卡：选中档位金色描边
+  Widget _fontScaleTiers(BuildContext context, double current) {
+    return Row(
+      children: [
+        for (final (label, _, scale) in fontTiers) ...[
+          if (scale != fontTiers.first.$3) const SizedBox(width: 10),
+          Expanded(
+            child: GestureDetector(
+              onTap: () => _setFontScale(scale),
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                decoration: BoxDecoration(
+                  color: current == scale
+                      ? LingShuColors.gold.withValues(alpha: 0.12)
+                      : Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                      color: current == scale
+                          ? LingShuColors.gold
+                          : LingShuColors.inkSoft.withValues(alpha: 0.35),
+                      width: current == scale ? 1.6 : 1),
+                ),
+                child: Column(children: [
+                  Text(label,
+                      style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                          color: current == scale
+                              ? LingShuColors.gold
+                              : LingShuColors.ink)),
+                  const SizedBox(height: 2),
+                  Text('${(scale * 100).round()}%',
+                      style: const TextStyle(
+                          fontSize: 10.5, color: LingShuColors.inkSoft)),
+                ]),
+              ),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  /// 图例：同一段样例文案按三档各自的实际缩放渲染，选中档位高亮。
+  /// 每行独立 MediaQuery 覆盖——图例展示的是「该档位的样子」，
+  /// 不随当前所选档位二次缩放（ambient = 系统×档位，先还原系统因子）。
+  List<Widget> _fontScaleLegend(BuildContext context, double current) {
+    final ambient = MediaQuery.textScalerOf(context).scale(1.0);
+    final system = ambient / current;
+    return [
+      Text('图例 · 三档实际效果对比（金色框为当前档位）',
+          style: Theme.of(context)
+              .textTheme
+              .bodySmall
+              ?.copyWith(color: LingShuColors.inkSoft)),
+      const SizedBox(height: 8),
+      for (final (label, _, scale) in fontTiers)
+        MediaQuery(
+          key: ValueKey(scale),
+          data: MediaQuery.of(context).copyWith(
+              textScaler: TextScaler.linear(system * scale)),
+          child: Container(
+            width: double.infinity,
+            margin: const EdgeInsets.only(bottom: 8),
+            padding:
+                const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(
+                  color: current == scale
+                      ? LingShuColors.gold
+                      : LingShuColors.inkSoft.withValues(alpha: 0.3),
+                  width: current == scale ? 1.6 : 1),
+            ),
+            child: Row(children: [
+              SizedBox(
+                width: 42,
+                child: Text(label,
+                    style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: current == scale
+                            ? LingShuColors.gold
+                            : LingShuColors.inkSoft)),
+              ),
+              Expanded(
+                child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('血压 124/82 mmHg · 空腹血糖 5.6',
+                          style: TextStyle(fontSize: 14)),
+                      const SizedBox(height: 2),
+                      Text('今晚 20:00 服用 苯磺酸氨氯地平片 5mg',
+                          style: TextStyle(
+                              fontSize: 11.5,
+                              color: LingShuColors.inkSoft
+                                  .withValues(alpha: 0.9))),
+                    ]),
+              ),
+            ]),
+          ),
+        ),
+    ];
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -173,6 +286,19 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
           ),
           const SizedBox(height: 10),
           FilledButton(onPressed: _saveASR, child: const Text('保存语音识别配置')),
+          const SizedBox(height: 24),
+          const Text('字体大小',
+              style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+          const SizedBox(height: 4),
+          Text('三档全局生效，叠加在系统「字体大小」设置之上；下方图例即各档位的实际显示效果。',
+              style: Theme.of(context)
+                  .textTheme
+                  .bodySmall
+                  ?.copyWith(color: LingShuColors.inkSoft)),
+          const SizedBox(height: 10),
+          _fontScaleTiers(context, ref.watch(fontScaleProvider)),
+          const SizedBox(height: 16),
+          ..._fontScaleLegend(context, ref.watch(fontScaleProvider)),
           const SizedBox(height: 24),
           const Text('安全',
               style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),

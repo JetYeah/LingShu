@@ -392,42 +392,49 @@ class _AcupointPageState extends ConsumerState<AcupointPage> {
                               letterSpacing: 1)),
                     )
                   : Row(children: [
+                      // FittedBox：大字体档位下卡内自然高度不足时整体等比缩小，
+                      // 不再溢出裁字（只差几个像素，缩放后视觉无感）
                       Expanded(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Row(children: [
-                              for (var i = 0;
-                                  i < h.name.characters.length;
-                                  i++)
-                                Padding(
-                                  padding: const EdgeInsets.only(right: 3),
-                                  child: Column(children: [
-                                    Text(i < h.py.length ? h.py[i] : '',
-                                        style: const TextStyle(
-                                            fontSize: 7.5,
-                                            height: 1.1,
-                                            color: LingShuColors.inkSoft)),
-                                    Text(h.name.characters.elementAt(i),
-                                        style: const TextStyle(
-                                            fontFamily: 'SerifSC',
-                                            fontSize: 15.5,
-                                            height: 1.15,
-                                            fontWeight: FontWeight.w700)),
-                                  ]),
-                                ),
-                            ]),
-                            const SizedBox(height: 3),
-                            Text(
-                              h.intro,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                  fontSize: 10.5,
-                                  color: LingShuColors.inkSoft,
-                                  letterSpacing: 0.5),
-                            ),
-                          ],
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          alignment: Alignment.centerLeft,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Row(children: [
+                                for (var i = 0;
+                                    i < h.name.characters.length;
+                                    i++)
+                                  Padding(
+                                    padding: const EdgeInsets.only(right: 3),
+                                    child: Column(children: [
+                                      Text(i < h.py.length ? h.py[i] : '',
+                                          style: const TextStyle(
+                                              fontSize: 7.5,
+                                              height: 1.1,
+                                              color: LingShuColors.inkSoft)),
+                                      Text(h.name.characters.elementAt(i),
+                                          style: const TextStyle(
+                                              fontFamily: 'SerifSC',
+                                              fontSize: 15.5,
+                                              height: 1.15,
+                                              fontWeight: FontWeight.w700)),
+                                    ]),
+                                  ),
+                              ]),
+                              const SizedBox(height: 3),
+                              Text(
+                                h.intro,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                    fontSize: 10.5,
+                                    color: LingShuColors.inkSoft,
+                                    letterSpacing: 0.5),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                       // 图鉴入口

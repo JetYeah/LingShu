@@ -128,12 +128,21 @@ GoRouter buildRouter(WidgetRef ref) {
   );
 }
 
-class LingShuApp extends ConsumerWidget {
+class LingShuApp extends ConsumerStatefulWidget {
   const LingShuApp({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final router = buildRouter(ref);
+  ConsumerState<LingShuApp> createState() => _LingShuAppState();
+}
+
+class _LingShuAppState extends ConsumerState<LingShuApp> {
+  // router 只建一次：build 里重建 GoRouter 会重置导航栈
+  //（字体档位等任何触发本 widget rebuild 的状态都会把用户弹回首页）
+  late final GoRouter _router = buildRouter(ref);
+
+  @override
+  Widget build(BuildContext context) {
+    final fontScale = ref.watch(fontScaleProvider);
     return MaterialApp.router(
       title: '灵枢',
       debugShowCheckedModeBanner: false,
@@ -141,7 +150,17 @@ class LingShuApp extends ConsumerWidget {
       locale: const Locale('zh', 'CN'),
       supportedLocales: const [Locale('zh', 'CN'), Locale('en', 'US')],
       localizationsDelegates: GlobalMaterialLocalizations.delegates,
-      routerConfig: router,
+      routerConfig: _router,
+      builder: (context, child) {
+        // 字体档位叠加在系统「字体大小」之上：TextScaler 作用于全部
+        // Text（含字面量 fontSize），布局用弹性约束自适应
+        final system = MediaQuery.textScalerOf(context).scale(1.0);
+        return MediaQuery(
+          data: MediaQuery.of(context)
+              .copyWith(textScaler: TextScaler.linear(system * fontScale)),
+          child: child!,
+        );
+      },
     );
   }
 }

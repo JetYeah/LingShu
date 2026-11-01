@@ -15,6 +15,19 @@ import 'core/services/ocr_service.dart';
 final sharedPreferencesProvider =
     Provider<SharedPreferences>((ref) => throw UnimplementedError());
 
+/// 字体档位（1.0 小=默认 / 1.15 中 / 1.3 大）。main 在 runApp 前
+/// 完成 SharedPreferences 初始化，这里可同步读取。
+/// 经 MaterialApp.builder 与系统字体缩放相乘后注入全局 textScaler。
+final fontScaleProvider = StateProvider<double>(
+    (ref) => ref.watch(sharedPreferencesProvider).getDouble('font.scale') ?? 1.0);
+
+/// 字体三档档位表（设置页选项与图例共用）
+const fontTiers = <(String, String, double)>[
+  ('小', '标准 · 当前默认', 1.0),
+  ('中', '较大 · 老花友好', 1.15),
+  ('大', '特大 · 一眼看清', 1.3),
+];
+
 final dbProvider = Provider<AppDatabase>((ref) => AppDatabase());
 
 final authProvider = Provider<AuthService>(
