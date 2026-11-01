@@ -81,9 +81,9 @@ class _AiHomePageState extends ConsumerState<AiHomePage>
   bool _asrBusy = false; // 停止录音后的转写阶段
   final _recorder = AudioRecorder();
 
-  /// 消息视图的雾化背景：星野快照（低分辨率截图 + 一次性高斯模糊）。
-  /// 星野每帧都在动，实时 BackdropFilter 会逐帧重算全屏模糊拖帧低端机；
-  /// 快照只拍一次，之后连动画底都停掉，滚动零每帧成本。
+  /// 消息视图的雾化背景：星野快照（低分辨率截图 + 一次性高斯模糊），
+  /// 半透明叠加在实时星野上——若隐若现而非全遮。快照只拍一次，
+  /// 避免实时 BackdropFilter 逐帧全屏模糊拖帧低端机。
   ui.Image? _frost;
   bool _frostBusy = false;
   final _bgKey = GlobalKey();
@@ -185,6 +185,9 @@ class _AiHomePageState extends ConsumerState<AiHomePage>
       WidgetsBinding.instance.addPostFrameCallback((_) => _ensureFrost());
     }
   }
+
+  /// 会话折叠回空闲星野视图：雾层随条件隐藏，快照保留供再次展开复用
+  void _collapseChat() => setState(() => _historyCollapsed = true);
 
   /// 星野快照 → 低分辨率截图放大即自然糊化，再过一次高斯 = 雾化玻璃。
   /// 失败静默：雾化缺席时仍有暗化层兜底，不影响会话。
@@ -392,36 +395,66 @@ class _AiHomePageState extends ConsumerState<AiHomePage>
           children: [
             // 星野动画只重建背景层；会话/输入区不随帧重建
             // 星野层用真实秒数：北斗闪烁相位独立于呼吸球
-            // 雾化快照拍好后停掉动画底——消息视图下星图不可见，白耗 GPU
-            if (_frost == null)
-              AnimatedBuilder(
-                animation: _breathe,
-                builder: (_, _) => RepaintBoundary(
-                  key: _bgKey,
-                  child: BeidouBackground(
-                      t: _clock.elapsedMilliseconds / 1000.0),
-                ),
-              )
-            else ...[
+            // 会话视图下雾层半透明覆盖——星野若隐若现而非全遮
+            AnimatedBuilder(
+              animation: _breathe,
+              builder: (_, _) => RepaintBoundary(
+                key: _bgKey,
+                child: BeidouBackground(
+                    t: _clock.elapsedMilliseconds / 1000.0),
+              ),
+            ),
+            // 会话雾化层：预模糊快照半透明叠加（模糊 60% + 暗化 20%，
+            // 星野剩约三成可见度，若隐若现）；快照只拍一次零每帧成本
+            if (_msgs.isNotEmpty && !_historyCollapsed && _frost != null)
               Positioned.fill(
                 child: TweenAnimationBuilder<double>(
                   tween: Tween(begin: 0, end: 1),
                   duration: const Duration(milliseconds: 400),
                   builder: (_, v, child) =>
-                      Opacity(opacity: v, child: child!),
+                      Opacity(opacity: 0.6 * v, child: child!),
                   child: RawImage(image: _frost, fit: BoxFit.cover),
                 ),
               ),
-            ],
-            // 消息视图暗化：正文对比度的主保障，雾化快照拍好前也在
+            // 会话暗化：正文对比度的主保障，雾化快照拍好前也在
             if (_msgs.isNotEmpty && !_historyCollapsed)
               const Positioned.fill(
-                child: ColoredBox(color: Color(0x40000000)),
+                child: ColoredBox(color: Color(0x33000000)),
               ),
             SafeArea(
               child: Column(
                 children: [
                   _header(),
+                  // 会话折叠入口：点后回空闲星野视图，历史条可再展开
+                  if (_msgs.isNotEmpty && !_historyCollapsed)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 2),
+                      child: GestureDetector(
+                        onTap: _collapseChat,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 14, vertical: 7),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.14),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                                color: Colors.white.withValues(alpha: 0.30)),
+                          ),
+                          child: Row(mainAxisSize: MainAxisSize.min, children: [
+                            Icon(Icons.unfold_less,
+                                size: 14,
+                                color: Colors.white.withValues(alpha: 0.75)),
+                            const SizedBox(width: 6),
+                            Text('收起会话',
+                                style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                    color:
+                                        Colors.white.withValues(alpha: 0.9))),
+                          ]),
+                        ),
+                      ),
+                    ),
                   Expanded(
                     // 收起时回到空闲视图（历史不显示但保留），新会话直接开始
                     child: (_msgs.isEmpty || _historyCollapsed)
