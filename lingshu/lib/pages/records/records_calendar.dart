@@ -388,6 +388,7 @@ class _RecordsCalendarViewState extends State<RecordsCalendarView> {
             : null,
         child: Container(
           alignment: Alignment.center,
+          padding: const EdgeInsets.symmetric(vertical: 4),
           decoration: BoxDecoration(
             color: has
                 ? color!.withValues(alpha: 0.16)
@@ -399,19 +400,24 @@ class _RecordsCalendarViewState extends State<RecordsCalendarView> {
                     : LingShuColors.cardBorder.withValues(alpha: 0.4),
                 width: has ? 1 : 0.8),
           ),
-          child: Column(mainAxisSize: MainAxisSize.min, children: [
-            Text('$y',
-                style: TextStyle(
-                    fontSize: 15.5,
-                    fontWeight: has ? FontWeight.w700 : FontWeight.w400,
-                    color: has
-                        ? LingShuColors.ink
-                        : LingShuColors.inkSoft.withValues(alpha: 0.55))),
-            if (count > 1)
-              Text('$count 份',
-                  style: const TextStyle(
-                      fontSize: 9.5, color: LingShuColors.inkSoft)),
-          ]),
+          // FittedBox：大字体档位下格高不足时年份+份数整体等比缩小，
+          // 不再溢出格底（与挂图今日一味卡同一处理）
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Column(mainAxisSize: MainAxisSize.min, children: [
+              Text('$y',
+                  style: TextStyle(
+                      fontSize: 15.5,
+                      fontWeight: has ? FontWeight.w700 : FontWeight.w400,
+                      color: has
+                          ? LingShuColors.ink
+                          : LingShuColors.inkSoft.withValues(alpha: 0.55))),
+              if (count > 1)
+                Text('$count 份',
+                    style: const TextStyle(
+                        fontSize: 9.5, color: LingShuColors.inkSoft)),
+            ]),
+          ),
         ),
       ),
     );
@@ -460,14 +466,19 @@ class _RecordsCalendarViewState extends State<RecordsCalendarView> {
               width: list.isEmpty ? 0.8 : 1.2),
         ),
         padding: const EdgeInsets.all(8),
-        child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-          Text(name,
-              style: const TextStyle(
-                  fontFamily: 'SerifSC', fontSize: 14, fontWeight: FontWeight.w600)),
-          const SizedBox(height: 6),
-          if (list.isEmpty)
-            const Text('—',
-                style: TextStyle(fontSize: 11, color: LingShuColors.inkSoft))
+        // FittedBox：大字体档位下同年份格一样整体等比缩小防溢出
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+            Text(name,
+                style: const TextStyle(
+                    fontFamily: 'SerifSC',
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600)),
+            const SizedBox(height: 6),
+            if (list.isEmpty)
+              const Text('—',
+                  style: TextStyle(fontSize: 11, color: LingShuColors.inkSoft))
           else ...[
             Row(mainAxisAlignment: MainAxisAlignment.center, children: [
               for (final t in balls)
@@ -484,7 +495,8 @@ class _RecordsCalendarViewState extends State<RecordsCalendarView> {
                 style:
                     const TextStyle(fontSize: 10, color: LingShuColors.inkSoft)),
           ],
-        ]),
+          ]),
+        ),
       ),
     );
   }

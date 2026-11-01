@@ -275,11 +275,14 @@ class _AcupointPageState extends ConsumerState<AcupointPage> {
       );
     }
 
+    // 大字体档位下固定 42 高会纵向裁掉胶囊文字，高度随文字缩放
+    final textScale = MediaQuery.textScalerOf(context).scale(1.0);
     return SizedBox(
-      height: 42,
+      height: 42 * textScale,
       child: ListView(
         scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+        padding: EdgeInsets.symmetric(
+            horizontal: 12, vertical: 5 * textScale),
         children: [
           chip('COMMON', '常用', null),
           chip('ALL', '全部', null),
