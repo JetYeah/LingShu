@@ -44,11 +44,39 @@ class MetricsPage extends ConsumerStatefulWidget {
   ConsumerState<MetricsPage> createState() => _MetricsPageState();
 }
 
+/// 健康追踪模糊搜索：子串或「按序子序列」命中即算——
+/// 「血糖」命中 空腹血糖 GLU，「空糖」也命中（空[腹血]糖）；
+/// 忽略大小写与空格，名称、分类、单位、编码任一命中即可。纯函数可单测。
+bool metricFuzzyHit(
+    String name, String tag, String unit, String code, String query) {
+  final q = query.replaceAll(RegExp(r'\s+'), '').toLowerCase();
+  if (q.isEmpty) return true;
+  final hay = '$name $tag $unit $code'
+      .replaceAll(RegExp(r'\s+'), '')
+      .toLowerCase();
+  if (hay.contains(q)) return true;
+  // 子序列：query 的字符按顺序逐一出现在 hay 中
+  final qr = q.runes.toList();
+  var i = 0;
+  for (final ch in hay.runes) {
+    if (i < qr.length && ch == qr[i]) i++;
+    if (i == qr.length) return true;
+  }
+  return false;
+}
+
 class _MetricsPageState extends ConsumerState<MetricsPage> {
   bool _classifying = false;
   String? _classifyMsg;
   String? _tagFilter; // null = 全部分类；'⭐' = 仅看关注的指标
   bool _seedChecked = false; // 空档案播种预设指标：每个档案只查一次
+  final _search = TextEditingController(); // 模糊搜索（命中时压过分类筛选）
+
+  @override
+  void dispose() {
+    _search.dispose();
+    super.dispose();
+  }
 
   static const _followedFilter = '⭐';
 
@@ -96,9 +124,17 @@ class _MetricsPageState extends ConsumerState<MetricsPage> {
     }
     // 「⭐」筛选：只看关注的指标
     final followedOnly = _tagFilter == _followedFilter;
-    final shown = followedOnly
-        ? metrics.where((m) => m.followed).toList()
-        : metrics;
+    // 模糊搜索：非空时压过分类筛选，按名称/分类/单位/编码全库匹配
+    final query = _search.text.trim();
+    final searching = query.isNotEmpty;
+    final shown = searching
+        ? metrics
+            .where((m) =>
+                metricFuzzyHit(m.name, m.tag ?? '', m.unit, m.code, query))
+            .toList()
+        : followedOnly
+            ? metrics.where((m) => m.followed).toList()
+            : metrics;
     final followedCount = metrics.where((m) => m.followed).length;
 
     // 按 tag 分组（保持原列表内顺序）
@@ -109,8 +145,8 @@ class _MetricsPageState extends ConsumerState<MetricsPage> {
     }
     final sortedTags = groups.keys.toList()..sort(_tagCompare);
 
-    // 快速筛选：只看选中分类
-    final visibleTags = followedOnly
+    // 快速筛选：只看选中分类（搜索时忽略，搜索结果跨分类展示）
+    final visibleTags = searching || followedOnly
         ? sortedTags
         : _tagFilter == null
             ? sortedTags
@@ -148,8 +184,47 @@ class _MetricsPageState extends ConsumerState<MetricsPage> {
         label: const Text('自定义指标'),
       ),
       body: Column(children: [
-        // ── 分类标签快速筛选 ──
-        if (sortedTags.isNotEmpty)
+        // ── 模糊搜索：名称/分类/单位/编码，子串或按序子序列命中 ──
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+          child: TextField(
+            controller: _search,
+            onChanged: (_) => setState(() {}),
+            decoration: InputDecoration(
+              isDense: true,
+              hintText: '模糊搜索：血糖 / 血红 / 空糖…',
+              hintStyle: const TextStyle(
+                  fontSize: 13, color: LingShuColors.inkSoft),
+              prefixIcon: const Icon(Icons.search, size: 20),
+              suffixIcon: _search.text.isEmpty
+                  ? null
+                  : IconButton(
+                      tooltip: '清空',
+                      icon: const Icon(Icons.close, size: 18),
+                      onPressed: () {
+                        _search.clear();
+                        setState(() {});
+                      }),
+              filled: true,
+              fillColor: Colors.white,
+              contentPadding: const EdgeInsets.symmetric(vertical: 10),
+              border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide:
+                      const BorderSide(color: LingShuColors.cardBorder)),
+              enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide:
+                      const BorderSide(color: LingShuColors.cardBorder)),
+              focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide:
+                      const BorderSide(color: LingShuColors.gold, width: 1.4)),
+            ),
+          ),
+        ),
+        // ── 分类标签快速筛选（搜索时隐藏，结果跨分类展示） ──
+        if (!searching && sortedTags.isNotEmpty)
           SizedBox(
             height: 36,
             child: ListView(
@@ -192,19 +267,28 @@ class _MetricsPageState extends ConsumerState<MetricsPage> {
                   ? Center(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
-                        children: const [
-                          Icon(Icons.star_border_rounded,
-                              size: 44, color: LingShuColors.cardBorder),
-                          SizedBox(height: 10),
-                          Text('还没有关注的指标',
-                              style: TextStyle(
+                        children: [
+                          Icon(
+                              searching
+                                  ? Icons.search_off
+                                  : Icons.star_border_rounded,
+                              size: 44,
+                              color: LingShuColors.cardBorder),
+                          const SizedBox(height: 10),
+                          Text(
+                              searching
+                                  ? '未找到与「$query」匹配的指标'
+                                  : '还没有关注的指标',
+                              style: const TextStyle(
                                   fontSize: 13.5,
                                   color: LingShuColors.inkSoft)),
-                          SizedBox(height: 6),
-                          Text('点击指标卡片右侧的 ☆ 即可关注',
-                              style: TextStyle(
-                                  fontSize: 12,
-                                  color: LingShuColors.inkSoft)),
+                          if (!searching) ...[
+                            const SizedBox(height: 6),
+                            const Text('点击指标卡片右侧的 ☆ 即可关注',
+                                style: TextStyle(
+                                    fontSize: 12,
+                                    color: LingShuColors.inkSoft)),
+                          ],
                         ],
                       ),
                     )
